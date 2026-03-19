@@ -1,0 +1,24 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+*.log
+
+# Build artifacts
+build/
+dist/
+installer/output/
+installer/_inno/
+installer/_innosetup-*.exe
+service/winsw.exe
+*.spec
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.tmp

@@ -1,0 +1,19 @@
+<service>
+  <id>MediaArrManager</id>
+  <name>Grabby</name>
+  <description>Never miss a release. Sonarr/Radarr missing + upgrade automation with web UI.</description>
+
+  <!-- Point this at your packaged exe path -->
+  <executable>%BASE%\MediaArrManager.exe</executable>
+  <arguments>--host 127.0.0.1 --port 8765</arguments>
+
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+
+  <onfailure action="restart" delay="5 sec"/>
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="20 sec"/>
+</service>
+

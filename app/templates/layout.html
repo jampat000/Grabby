@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="app-layout">
+      <aside class="sidebar">
+        <a href="/" class="sidebar-brand">
+          <span class="sidebar-brand-row">
+            <img src="/static/grabby-logo.svg" alt="Grabby" class="sidebar-brand-mark" />
+            <span class="sidebar-logo">Grabby</span>
+          </span>
+          <span class="sidebar-tagline">{{ app_tagline|default("Never miss a release.", true) }}</span>
+        </a>
+        <nav class="sidebar-nav">
+          <a href="/" class="sidebar-link {% if request.url.path == '/' %}active{% endif %}">
+            <span class="sidebar-icon">▣</span>
+            <span>Dashboard</span>
+          </a>
+          <a href="/activity" class="sidebar-link {% if request.url.path == '/activity' %}active{% endif %}">
+            <span class="sidebar-icon">◎</span>
+            <span>Activity</span>
+          </a>
+          <a href="/logs" class="sidebar-link {% if request.url.path == '/logs' %}active{% endif %}">
+            <span class="sidebar-icon">☰</span>
+            <span>Logs</span>
+          </a>
+          <a href="/settings" class="sidebar-link {% if request.url.path == '/settings' %}active{% endif %}">
+            <span class="sidebar-icon">⚙</span>
+            <span>Settings</span>
+          </a>
+          <a href="/cleaner" class="sidebar-link {% if request.url.path in ['/cleaner', '/emby/preview', '/emby/settings'] %}active{% endif %}">
+            <span class="sidebar-icon">✦</span>
+            <span>Cleaner</span>
+          </a>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="sidebar-time" title="Your timezone: {{ timezone|default('UTC', true) }}">
+            {{ now_local|default('—', true) }}
+          </div>
+        </div>
+      </aside>
+      <main class="main">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+    <div id="toast" class="toast"></div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

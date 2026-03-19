@@ -1,0 +1,164 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>Cleaner Settings</h1>
+      <p>Dedicated cleanup configuration, fully separate from Arr settings.</p>
+    </div>
+  </div>
+
+  <div class="module-tabs">
+    <a href="/cleaner" class="module-tab">Cleaner</a>
+    <a href="/emby/settings" class="module-tab active">Cleaner Settings</a>
+  </div>
+
+  <div class="card module-content">
+      <h2>Cleaner settings</h2>
+      <div class="hint">Dedicated Emby configuration tab. Managed from the Cleaner section.</div>
+
+      {% if emby and emby.status_message and not emby.status_message.startswith("Test") %}
+      <div class="section small">
+        <div style="margin-top:6px;">{{ emby.status_message }}</div>
+      </div>
+      {% endif %}
+
+      <div class="section">
+      <h3>Emby Settings</h3>
+      <form method="post" action="/emby/settings/connection">
+        <div class="checkline">
+          <input type="checkbox" name="emby_enabled" {% if settings.emby_enabled %}checked{% endif %} />
+          <strong>Enable Emby Cleanup</strong>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Emby URL</label>
+            <input class="input" type="text" name="emby_url" value="{{ settings.emby_url }}" placeholder="http://localhost:8096" />
+            <div class="small">Required for Emby API access.</div>
+          </div>
+          <div class="field">
+            <label>Emby User ID (optional)</label>
+            <input class="input" type="text" name="emby_user_id" value="{{ settings.emby_user_id }}" placeholder="Leave blank to use first Emby user" />
+          </div>
+        </div>
+
+        <label>Emby API Key</label>
+        <div class="control">
+          <input class="password" id="emby_api_key" type="password" name="emby_api_key" value="{{ settings.emby_api_key }}" placeholder="X-Emby-Token" />
+          <button class="icon-btn" data-reveal="emby_api_key" type="button">Show</button>
+        </div>
+        <div class="small">Required. Generate in Emby Dashboard - Advanced - API Keys. Do not paste your Emby URL here.</div>
+
+        <div class="btnbar">
+          <button class="btn" type="submit">Save Emby settings</button>
+          <button type="submit" class="btn secondary" formaction="/test/emby-form">Test Emby</button>
+        </div>
+      </form>
+      </div>
+
+      <div class="section">
+      <h3>Cleaner Settings</h3>
+      <form method="post" action="/emby/settings/cleaner">
+        <div class="section">
+          <h3>Content criteria</h3>
+          <div class="criteria-grid">
+            <div class="criteria-panel">
+              <h4 class="criteria-title">
+                <span class="criteria-icon criteria-icon-tv" aria-hidden="true">
+                  <img src="/static/icon-tv.svg" alt="" class="criteria-icon-img" />
+                </span>
+                <span>TV</span>
+              </h4>
+              <div class="field">
+                <label>Delete watched TV shows</label>
+                <div class="checkline">
+                  <input type="checkbox" name="emby_rule_tv_delete_watched" {% if settings.emby_rule_tv_delete_watched %}checked{% endif %} />
+                  Yes, delete watched TV shows
+                </div>
+              </div>
+              <div class="field">
+                <label>Delete unwatched TV older than N days</label>
+                <input class="number" type="number" name="emby_rule_tv_unwatched_days" value="{{ settings.emby_rule_tv_unwatched_days }}" min="0" max="36500" />
+                <div class="small">Set 0 to disable this rule.</div>
+              </div>
+            </div>
+
+            <div class="criteria-panel">
+              <h4 class="criteria-title">
+                <span class="criteria-icon criteria-icon-movie" aria-hidden="true">
+                  <img src="/static/icon-film.svg" alt="" class="criteria-icon-img" />
+                </span>
+                <span>Movies</span>
+              </h4>
+              <div class="field">
+                <label>Delete watched movies rated under</label>
+                <input class="number" type="number" name="emby_rule_movie_watched_rating_below" value="{{ settings.emby_rule_movie_watched_rating_below }}" min="0" max="10" />
+                <div class="small">Set 0 to disable this rule.</div>
+              </div>
+              <div class="field">
+                <label>Delete unwatched movies older than N days</label>
+                <input class="number" type="number" name="emby_rule_movie_unwatched_days" value="{{ settings.emby_rule_movie_unwatched_days }}" min="0" max="36500" />
+                <div class="small">Set 0 to disable this rule.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Max items to scan per run</label>
+            <input class="number" type="number" name="emby_max_items_scan" value="{{ settings.emby_max_items_scan }}" min="1" max="5000" />
+          </div>
+          <div class="field">
+            <label>Max deletes per run</label>
+            <input class="number" type="number" name="emby_max_deletes_per_run" value="{{ settings.emby_max_deletes_per_run }}" min="1" max="500" />
+          </div>
+        </div>
+
+        <div class="checkline">
+          <input type="checkbox" name="emby_dry_run" {% if settings.emby_dry_run %}checked{% endif %} />
+          Dry-run (no actual deletes)
+        </div>
+        <div class="small">Keep this on until review looks correct.</div>
+
+        <div class="section">
+          <div class="checkline">
+            <input type="checkbox" name="emby_schedule_enabled" {% if settings.emby_schedule_enabled %}checked{% endif %} />
+            Enable Emby schedule window
+          </div>
+          <label>Days</label>
+          <input type="hidden" name="emby_schedule_days" value="{{ settings.emby_schedule_days }}" data-days-input />
+          <div class="days-picker" data-days-picker>
+            <button class="day-pill" type="button" data-day="Mon">Mon</button>
+            <button class="day-pill" type="button" data-day="Tue">Tue</button>
+            <button class="day-pill" type="button" data-day="Wed">Wed</button>
+            <button class="day-pill" type="button" data-day="Thu">Thu</button>
+            <button class="day-pill" type="button" data-day="Fri">Fri</button>
+            <button class="day-pill" type="button" data-day="Sat">Sat</button>
+            <button class="day-pill" type="button" data-day="Sun">Sun</button>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Start (h:mm AM/PM)</label>
+              <input class="input" type="text" name="emby_schedule_start" value="{{ emby_schedule_start_display }}" placeholder="12:00 AM" />
+              <div class="small">Example: 8:00 AM</div>
+            </div>
+            <div class="field">
+              <label>End (h:mm AM/PM)</label>
+              <input class="input" type="text" name="emby_schedule_end" value="{{ emby_schedule_end_display }}" placeholder="11:59 PM" />
+              <div class="small">Example: 11:30 PM</div>
+            </div>
+          </div>
+          <div class="small">If start is later than end, the window crosses midnight.</div>
+        </div>
+
+        <div class="btnbar">
+          <button class="btn" type="submit">Save Cleaner settings</button>
+          <a class="btn secondary" href="/cleaner">Open Cleaner</a>
+        </div>
+      </form>
+      </div>
+  </div>
+</div>
+{% endblock %}

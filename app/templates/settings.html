@@ -1,0 +1,269 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>Grabby Settings</h1>
+      <p>Configure Sonarr and Radarr in one place.</p>
+    </div>
+  </div>
+
+  <div class="module-tabs">
+    <a href="/settings" class="module-tab active">Grabby Settings</a>
+    <a href="/emby/settings" class="module-tab">Cleaner Settings</a>
+    <a href="/cleaner" class="module-tab">Cleaner Preview</a>
+  </div>
+
+  <div class="card module-content">
+    <h2>Grabby Settings</h2>
+    <div class="hint">Use <span class="kbd">http://</span> for direct Sonarr/Radarr/Emby connections unless you have HTTPS configured.</div>
+
+    <div class="section">
+      <h2>Cleaner</h2>
+      <div class="hint">Use Cleaner to delete movies in Emby based on your criteria.</div>
+      <div class="btnbar">
+        <a class="btn" href="/emby/settings">Open Cleaner Settings</a>
+        <a class="btn secondary" href="/cleaner">Open Cleaner Preview</a>
+      </div>
+    </div>
+
+    <form method="post" action="/settings">
+      <div class="row">
+        <div class="field">
+          <div class="checkline">
+            <input type="checkbox" name="sonarr_enabled" {% if settings.sonarr_enabled %}checked{% endif %} />
+            <strong>Sonarr</strong>
+          </div>
+          <label>Sonarr URL</label>
+          <div class="control">
+            <input class="input" type="text" name="sonarr_url" value="{{ settings.sonarr_url }}" placeholder="http://localhost:8989" />
+          </div>
+          <label>Sonarr API Key</label>
+          <div class="control">
+            <input class="password" id="sonarr_api_key" type="password" name="sonarr_api_key" value="{{ settings.sonarr_api_key }}" placeholder="X-Api-Key" />
+            <button class="icon-btn" data-reveal="sonarr_api_key" type="button">Show</button>
+          </div>
+
+          <div class="section">
+            <div class="checkline">
+              <input type="checkbox" name="sonarr_search_missing" {% if settings.sonarr_search_missing %}checked{% endif %} />
+              Missing searches
+            </div>
+            <div class="checkline">
+              <input type="checkbox" name="sonarr_search_upgrades" {% if settings.sonarr_search_upgrades %}checked{% endif %} />
+              Cutoff-unmet searches (upgrades)
+            </div>
+            <label>Max items per run</label>
+            <input class="number" type="number" name="sonarr_max_items_per_run" value="{{ settings.sonarr_max_items_per_run }}" min="1" max="1000" />
+          </div>
+
+          <div class="section">
+            <div class="checkline">
+              <input type="checkbox" name="sonarr_schedule_enabled" {% if settings.sonarr_schedule_enabled %}checked{% endif %} />
+              Enable schedule window
+            </div>
+            <label>Days</label>
+            <input type="hidden" name="sonarr_schedule_days" value="{{ settings.sonarr_schedule_days }}" data-days-input />
+            <div class="days-picker" data-days-picker>
+              <button class="day-pill" type="button" data-day="Mon">Mon</button>
+              <button class="day-pill" type="button" data-day="Tue">Tue</button>
+              <button class="day-pill" type="button" data-day="Wed">Wed</button>
+              <button class="day-pill" type="button" data-day="Thu">Thu</button>
+              <button class="day-pill" type="button" data-day="Fri">Fri</button>
+              <button class="day-pill" type="button" data-day="Sat">Sat</button>
+              <button class="day-pill" type="button" data-day="Sun">Sun</button>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>Start (h:mm AM/PM)</label>
+                <input class="input" type="text" name="sonarr_schedule_start" value="{{ sonarr_schedule_start_display }}" placeholder="12:00 AM" />
+                <div class="small">Example: 8:00 AM</div>
+              </div>
+              <div class="field">
+                <label>End (h:mm AM/PM)</label>
+                <input class="input" type="text" name="sonarr_schedule_end" value="{{ sonarr_schedule_end_display }}" placeholder="11:59 PM" />
+                <div class="small">Example: 11:30 PM</div>
+              </div>
+            </div>
+            <div class="small">If start is later than end, the window crosses midnight.</div>
+          </div>
+
+          <div class="btnbar">
+            <button type="submit" class="btn secondary" form="test-sonarr">Test Sonarr</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="checkline">
+            <input type="checkbox" name="radarr_enabled" {% if settings.radarr_enabled %}checked{% endif %} />
+            <strong>Radarr</strong>
+          </div>
+          <label>Radarr URL</label>
+          <div class="control">
+            <input class="input" type="text" name="radarr_url" value="{{ settings.radarr_url }}" placeholder="http://localhost:7878" />
+          </div>
+          <label>Radarr API Key</label>
+          <div class="control">
+            <input class="password" id="radarr_api_key" type="password" name="radarr_api_key" value="{{ settings.radarr_api_key }}" placeholder="X-Api-Key" />
+            <button class="icon-btn" data-reveal="radarr_api_key" type="button">Show</button>
+          </div>
+
+          <div class="section">
+            <div class="checkline">
+              <input type="checkbox" name="radarr_search_missing" {% if settings.radarr_search_missing %}checked{% endif %} />
+              Missing searches
+            </div>
+            <div class="checkline">
+              <input type="checkbox" name="radarr_search_upgrades" {% if settings.radarr_search_upgrades %}checked{% endif %} />
+              Cutoff-unmet searches (upgrades)
+            </div>
+            <label>Max items per run</label>
+            <input class="number" type="number" name="radarr_max_items_per_run" value="{{ settings.radarr_max_items_per_run }}" min="1" max="1000" />
+          </div>
+
+          <div class="section">
+            <div class="checkline">
+              <input type="checkbox" name="radarr_schedule_enabled" {% if settings.radarr_schedule_enabled %}checked{% endif %} />
+              Enable schedule window
+            </div>
+            <label>Days</label>
+            <input type="hidden" name="radarr_schedule_days" value="{{ settings.radarr_schedule_days }}" data-days-input />
+            <div class="days-picker" data-days-picker>
+              <button class="day-pill" type="button" data-day="Mon">Mon</button>
+              <button class="day-pill" type="button" data-day="Tue">Tue</button>
+              <button class="day-pill" type="button" data-day="Wed">Wed</button>
+              <button class="day-pill" type="button" data-day="Thu">Thu</button>
+              <button class="day-pill" type="button" data-day="Fri">Fri</button>
+              <button class="day-pill" type="button" data-day="Sat">Sat</button>
+              <button class="day-pill" type="button" data-day="Sun">Sun</button>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>Start (h:mm AM/PM)</label>
+                <input class="input" type="text" name="radarr_schedule_start" value="{{ radarr_schedule_start_display }}" placeholder="12:00 AM" />
+                <div class="small">Example: 8:00 AM</div>
+              </div>
+              <div class="field">
+                <label>End (h:mm AM/PM)</label>
+                <input class="input" type="text" name="radarr_schedule_end" value="{{ radarr_schedule_end_display }}" placeholder="11:59 PM" />
+                <div class="small">Example: 11:30 PM</div>
+              </div>
+            </div>
+            <div class="small">If start is later than end, the window crosses midnight.</div>
+          </div>
+
+          <div class="btnbar">
+            <button type="submit" class="btn secondary" form="test-radarr">Test Radarr</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="row">
+          <div class="field">
+            <label>Run interval (minutes)</label>
+            <input class="number" type="number" name="interval_minutes" value="{{ settings.interval_minutes }}" min="5" max="10080" />
+            <div class="small">Applies immediately after saving.</div>
+          </div>
+          <div class="field">
+            <label>Timezone</label>
+            <select class="input" name="timezone">
+              {% for tz in timezones %}
+              <option value="{{ tz[0] }}" {% if (settings.timezone or "UTC") == tz[0] %}selected{% endif %}>{{ tz[1] }}</option>
+              {% endfor %}
+            </select>
+            <div class="small">Used for schedule windows and activity times.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btnbar">
+        <button class="btn" type="submit">Save settings</button>
+        <a class="btn secondary" href="/">Back to dashboard</a>
+      </div>
+    </form>
+
+    <form id="test-sonarr" method="post" action="/test/sonarr"></form>
+    <form id="test-radarr" method="post" action="/test/radarr"></form>
+
+    <div class="section">
+      <h2>Cleaner (Emby)</h2>
+      <div class="hint">Configure Emby cleanup and movie deletion criteria from this page.</div>
+
+      <form method="post" action="/emby/settings/connection">
+        <div class="checkline">
+          <input type="checkbox" name="emby_enabled" {% if settings.emby_enabled %}checked{% endif %} />
+          <strong>Enable Cleaner integration</strong>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Emby URL</label>
+            <input class="input" type="text" name="emby_url" value="{{ settings.emby_url }}" placeholder="http://localhost:8096" />
+          </div>
+          <div class="field">
+            <label>Emby User ID (optional)</label>
+            <input class="input" type="text" name="emby_user_id" value="{{ settings.emby_user_id }}" placeholder="Leave blank to use first Emby user" />
+          </div>
+        </div>
+
+        <label>Emby API Key</label>
+        <div class="control">
+          <input class="password" id="emby_api_key_settings" type="password" name="emby_api_key" value="{{ settings.emby_api_key }}" placeholder="X-Emby-Token" />
+          <button class="icon-btn" data-reveal="emby_api_key_settings" type="button">Show</button>
+        </div>
+
+        <div class="btnbar">
+          <button class="btn secondary" type="submit">Save Emby connection</button>
+          <button class="btn secondary" type="submit" formaction="/test/emby-form">Test Emby</button>
+        </div>
+      </form>
+
+      <form method="post" action="/emby/settings/cleaner">
+        <div class="row">
+          <div class="field">
+            <label>Delete watched movies rated under</label>
+            <input class="number" type="number" name="emby_rule_movie_watched_rating_below" value="{{ settings.emby_rule_movie_watched_rating_below }}" min="0" max="10" />
+            <div class="small">Set 0 to disable.</div>
+          </div>
+          <div class="field">
+            <label>Delete unwatched movies older than N days</label>
+            <input class="number" type="number" name="emby_rule_movie_unwatched_days" value="{{ settings.emby_rule_movie_unwatched_days }}" min="0" max="36500" />
+            <div class="small">Set 0 to disable.</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Max items to scan per run</label>
+            <input class="number" type="number" name="emby_max_items_scan" value="{{ settings.emby_max_items_scan }}" min="1" max="5000" />
+          </div>
+          <div class="field">
+            <label>Max deletes per run</label>
+            <input class="number" type="number" name="emby_max_deletes_per_run" value="{{ settings.emby_max_deletes_per_run }}" min="1" max="500" />
+          </div>
+        </div>
+
+        <div class="checkline">
+          <input type="checkbox" name="emby_dry_run" {% if settings.emby_dry_run %}checked{% endif %} />
+          Dry-run mode (recommended while testing)
+        </div>
+
+        <input type="hidden" name="emby_schedule_enabled" value="{{ 1 if settings.emby_schedule_enabled else 0 }}" />
+        <input type="hidden" name="emby_schedule_days" value="{{ settings.emby_schedule_days }}" />
+        <input type="hidden" name="emby_schedule_start" value="{{ settings.emby_schedule_start }}" />
+        <input type="hidden" name="emby_schedule_end" value="{{ settings.emby_schedule_end }}" />
+        <input type="hidden" name="emby_rule_tv_delete_watched" value="{{ 1 if settings.emby_rule_tv_delete_watched else 0 }}" />
+        <input type="hidden" name="emby_rule_tv_unwatched_days" value="{{ settings.emby_rule_tv_unwatched_days }}" />
+
+        <div class="btnbar">
+          <button class="btn" type="submit">Save movie cleanup criteria</button>
+          <a class="btn secondary" href="/cleaner">Open Cleaner Preview</a>
+          <a class="btn secondary" href="/emby/settings">Advanced Cleaner settings</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
