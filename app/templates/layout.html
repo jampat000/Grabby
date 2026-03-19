@@ -46,6 +46,7 @@
           <div class="sidebar-time" title="Your timezone: {{ timezone|default('UTC', true) }}">
             {{ now_local|default('—', true) }}
           </div>
+          <div class="sidebar-version" title="Grabby version">v{{ app_version|default('?', true) }}</div>
         </div>
       </aside>
       <main class="main">

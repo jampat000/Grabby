@@ -2,8 +2,34 @@ param(
   [switch]$Clean,
   [string]$IsccPath = "",
   [string]$WinSWVersion = "v2.12.0",
-  [switch]$InstallInnoSetupIfMissing
+  [switch]$InstallInnoSetupIfMissing,
+  # Semver only (e.g. 1.2.3). If empty: -Version from env, then repo VERSION file, then 0.0.0-dev
+  [string]$Version = ""
 )
+
+function Resolve-GrabbyAppVersion {
+  param(
+    [string]$Explicit,
+    [string]$Root
+  )
+  $v = $Explicit.Trim()
+  if ($v) { return $v }
+
+  $refName = $env:GITHUB_REF_NAME
+  if ($refName -and $refName -match '^v(\d+\.\d+\.\d+)$') {
+    return $Matches[1]
+  }
+
+  $vf = Join-Path $Root "VERSION"
+  if (Test-Path -LiteralPath $vf) {
+    $raw = (Get-Content -LiteralPath $vf -Raw).Trim()
+    if ($raw -match '^(\d+\.\d+\.\d+)') {
+      return $Matches[1]
+    }
+    return $raw
+  }
+  return "0.0.0-dev"
+}
 
 $ErrorActionPreference = "Stop"
 
@@ -106,7 +132,9 @@ if (-not $iscc) {
   throw "Inno Setup compiler (ISCC.exe) not found. Re-run with -IsccPath 'C:\path\to\ISCC.exe', or pass -InstallInnoSetupIfMissing to auto-install it."
 }
 
-& $iscc ".\\installer\\Grabby.iss"
+$appVersion = Resolve-GrabbyAppVersion -Explicit $Version -Root $root
+Write-Host "Inno AppVersion: $appVersion"
+& $iscc "/DMyAppVersion=$appVersion" ".\\installer\\Grabby.iss"
 
 Write-Host ""
 Write-Host "Installer built under: installer\\output\\GrabbySetup.exe"

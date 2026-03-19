@@ -51,6 +51,19 @@ jobs:
           $ErrorActionPreference = 'Stop'
           & "${{ github.workspace }}\installer\build.ps1" -Clean -InstallInnoSetupIfMissing
 
+      # Repo Settings → Variables: ENABLE_CODE_SIGNING = true
+      # Repo Settings → Secrets: WINDOWS_PFX_BASE64 (PFX as base64), WINDOWS_PFX_PASSWORD
+      - name: Sign installer (optional)
+        if: ${{ vars.ENABLE_CODE_SIGNING == 'true' }}
+        shell: pwsh
+        env:
+          WINDOWS_PFX_BASE64: ${{ secrets.WINDOWS_PFX_BASE64 }}
+          WINDOWS_PFX_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          & "${{ github.workspace }}\scripts\sign-installer.ps1" -InstallerPath "${{ github.workspace }}\installer\output\GrabbySetup.exe"
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v7
         with:

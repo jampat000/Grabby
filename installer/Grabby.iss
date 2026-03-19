@@ -3,7 +3,10 @@
 
 #define MyAppName "Grabby"
 #define MyAppPublisher "Grabby"
-#define MyAppVersion "0.1.0"
+; Override on command line: ISCC /DMyAppVersion=1.2.3 installer\Grabby.iss
+#ifndef MyAppVersion
+#define MyAppVersion "0.0.0-dev"
+#endif
 #define MyServiceId "Grabby"
 
 [Setup]
@@ -34,8 +37,8 @@ Filename: "{app}\winsw.exe"; Parameters: "start"; Flags: runhidden waituntilterm
 Filename: "http://127.0.0.1:8765"; Description: "Open Grabby in browser"; Flags: shellexec postinstall nowait skipifsilent
 
 [UninstallRun]
-Filename: "{app}\winsw.exe"; Parameters: "stop"; Flags: runhidden waituntilterminated skipifdoesntexist
-Filename: "{app}\winsw.exe"; Parameters: "uninstall"; Flags: runhidden waituntilterminated skipifdoesntexist
+Filename: "{app}\winsw.exe"; Parameters: "stop"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "GrabbyWinSwStop"
+Filename: "{app}\winsw.exe"; Parameters: "uninstall"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "GrabbyWinSwUninstall"
 
 [Icons]
 Name: "{group}\{#MyAppName} (Web UI)"; Filename: "http://127.0.0.1:8765"

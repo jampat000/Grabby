@@ -6,11 +6,35 @@
 - Re-trigger searches to **upgrade** existing items until the Arr app reports the **quality cutoff** is met (your Quality Profiles still decide what “better” means)
 - Optionally run **Emby cleanup rules** (dry-run supported) to delete old/low-rated content
 
+## Download (Windows installer)
+
+**[Download GrabbySetup.exe (latest GitHub Release)](https://github.com/jampat000/Grabby/releases/latest/download/GrabbySetup.exe)**
+
+- Requires **64-bit Windows**.
+- The installer deploys **Grabby** as a **Windows Service** (WinSW) and opens the Web UI when setup finishes.
+
+## Install & first run
+
+1. Run **`GrabbySetup.exe`** and complete the wizard (admin prompt is normal for a service).
+2. Open **`http://127.0.0.1:8765`** in your browser (default service port).
+3. Go to **Settings** and add your **Sonarr**, **Radarr**, and/or **Emby** URLs and API keys.
+
+Version is shown in the sidebar of the Web UI (`v…` next to the clock). It matches the repo **`VERSION`** file or your **release tag** when built in CI.
+
 ## What’s in this repo
 
 - `app/`: FastAPI web app + background scheduler
 - `service/`: WinSW (Windows Service Wrapper) config for running the packaged app as a Windows service
-- `installer/`: Inno Setup script (optional) to produce a friendly Windows installer
+- `installer/`: Inno Setup script to produce `GrabbySetup.exe`
+- `VERSION`: current release version (semver) for the app + installer metadata
+
+## License
+
+This project is licensed under the **MIT License** — see [`LICENSE`](LICENSE).
+
+## Changelog
+
+See [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Prereqs (dev)
 
@@ -54,27 +78,48 @@ cd <folder-with-winsw-and-xml-and-exe>
 .\winsw.exe start
 ```
 
-## Installer (optional)
+## Installer (local build)
 
 This builds a **single all-in-one installer EXE** that bundles the app + WinSW and installs/starts the Windows Service.
 
-Prereq: install Inno Setup (so `ISCC.exe` exists).
+Prereq: install Inno Setup (so `ISCC.exe` exists), or pass **`-InstallInnoSetupIfMissing`** for a silent per-user install into `installer\_inno\`.
 
 Build:
 
 ```powershell
 cd C:\Users\User\grabby
-.\installer\build.ps1 -Clean
+.\installer\build.ps1 -Clean -InstallInnoSetupIfMissing
+# Optional explicit version for Inno metadata:
+# .\installer\build.ps1 -Clean -InstallInnoSetupIfMissing -Version 1.2.3
 ```
 
 Output: `installer\output\GrabbySetup.exe`
 
+**Version resolution:** `-Version` if set → else **`GITHUB_REF_NAME`** on Actions when it looks like `v1.2.3` → else repo **`VERSION`** file → else `0.0.0-dev`.
+
+### Optional: code signing (Authenticode)
+
+To improve SmartScreen / enterprise trust, sign **`GrabbySetup.exe`** with a **code-signing certificate** (PFX):
+
+**Locally (PowerShell):**
+
+```powershell
+$env:INSTALLER_SIGN_PFX = "C:\path\to\codesign.pfx"
+$env:INSTALLER_SIGN_PASSWORD = "your-pfx-password"
+.\scripts\sign-installer.ps1 -InstallerPath ".\installer\output\GrabbySetup.exe"
+```
+
+**GitHub Actions:** add repository **variable** `ENABLE_CODE_SIGNING` = `true` and **secrets** `WINDOWS_PFX_BASE64` (base64 of the PFX file bytes) and `WINDOWS_PFX_PASSWORD`. The **Build installer** workflow runs `scripts\sign-installer.ps1` after the compile step when the variable is set.
+
 ## CI (GitHub Actions)
 
-On **push** (any branch), **pull requests**, and **manual run** (`workflow_dispatch`), the workflow **Build installer** runs on `windows-latest`: PyInstaller bundle → WinSW → Inno Setup → **`installer/output/GrabbySetup.exe`**.
+- **Test**: **pytest** on **Ubuntu** for every push / PR (`.github/workflows/test.yml`).
+- **Build installer**: on **Windows**, PyInstaller → Inno → artifact; **tags** `v*` also publish a **Release** (`.github/workflows/build-installer.yml`).
+
+On **push** (any branch), **pull requests**, and **manual run** (`workflow_dispatch`), **Build installer** runs on `windows-latest`: PyInstaller bundle → WinSW → Inno Setup → **`installer/output/GrabbySetup.exe`**.
 
 - Open **Actions** → latest run → **Artifacts** → download **GrabbySetup** (good for PR / branch review before merge).
-- Pushing a **tag** matching `v*` (e.g. `v1.2.3`) **prepares** a release: the build finishes and uploads the artifact, then the **release** job **pauses** until someone approves it (see below). After approval, it creates/updates the **GitHub Release** and attaches `GrabbySetup.exe` (release notes are auto-generated).
+- Pushing a **tag** matching `v*` (e.g. `v1.2.3`) **prepares** a release: the build finishes and uploads the artifact, then the **release** job **pauses** until someone approves it (see below). After approval, it creates/updates the **GitHub Release** and attaches `GrabbySetup.exe` (release notes use `.github/release.yml` categories when auto-generated).
 
 ### Approve before publishing a release
 
@@ -86,3 +131,6 @@ So you can inspect the workflow / artifact before anything goes on the **Release
 
 This does **not** block `git push` itself—only the **release** step on GitHub. To confirm locally before any push, use your usual branch/PR review; the PR build artifact is the installer for that commit.
 
+### Dependency updates
+
+[**Dependabot**](.github/dependabot.yml) opens weekly PRs for **pip** and **GitHub Actions** dependencies.

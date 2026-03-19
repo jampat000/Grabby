@@ -30,6 +30,7 @@ from app.emby_rules import (
 from app.models import ActivityLog, AppSettings, AppSnapshot, Base, JobRunLog
 from app.schemas import SettingsIn
 from app.scheduler import ServiceScheduler
+from app.version_info import get_app_version
 
 
 APP_NAME = "Grabby"
@@ -37,6 +38,7 @@ APP_TAGLINE = "Never miss a release."
 
 app = FastAPI(title=APP_NAME)
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+templates.env.globals["app_version"] = get_app_version()
 
 static_dir = Path(__file__).parent / "static"
 static_dir.mkdir(exist_ok=True)
