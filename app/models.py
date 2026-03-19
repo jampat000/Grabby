@@ -58,6 +58,7 @@ class AppSettings(Base):
     emby_rule_unwatched_days: Mapped[int] = mapped_column(Integer, default=0)  # 0 disables
     emby_rule_movie_watched_rating_below: Mapped[int] = mapped_column(Integer, default=0)  # 0 -> fallback/global or disabled
     emby_rule_movie_unwatched_days: Mapped[int] = mapped_column(Integer, default=0)  # 0 -> fallback/global or disabled
+    emby_rule_movie_genres_csv: Mapped[str] = mapped_column(Text, default="")
     emby_rule_tv_delete_watched: Mapped[bool] = mapped_column(Boolean, default=False)
     emby_rule_tv_watched_rating_below: Mapped[int] = mapped_column(Integer, default=0)  # 0 -> fallback/global or disabled
     emby_rule_tv_unwatched_days: Mapped[int] = mapped_column(Integer, default=0)  # 0 -> fallback/global or disabled

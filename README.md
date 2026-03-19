@@ -22,10 +22,12 @@
 cd C:\Users\User\grabby
 py -m venv .venv
 .\.venv\Scripts\pip install -r requirements.txt
-.\.venv\Scripts\uvicorn app.main:app --host 127.0.0.1 --port 8765
+.\scripts\dev-start.ps1
 ```
 
-Then open `http://127.0.0.1:8765`.
+Then open the URL printed by the script (default `http://127.0.0.1:8766`).
+
+Why `8766` by default: the installed Windows service app often runs on `8765`, which can hide source-code UI changes in Simple Browser.
 
 ## Packaging (exe)
 

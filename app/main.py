@@ -18,7 +18,7 @@ import httpx
 
 from app.arr_client import ArrClient, ArrConfig
 from app.emby_client import EmbyClient, EmbyConfig
-from app.emby_rules import evaluate_candidate
+from app.emby_rules import evaluate_candidate, movie_matches_selected_genres, parse_genres_csv
 from app.models import ActivityLog, AppSettings, AppSnapshot, Base, JobRunLog
 from app.schemas import SettingsIn
 from app.scheduler import ServiceScheduler
@@ -91,6 +91,28 @@ _TZ_ALIASES = {
     "AEDT": "Australia/Sydney",
     "AEST": "Australia/Brisbane",
 }
+
+_MOVIE_GENRE_OPTIONS = [
+    "Action",
+    "Adventure",
+    "Animation",
+    "Comedy",
+    "Crime",
+    "Documentary",
+    "Drama",
+    "Family",
+    "Fantasy",
+    "History",
+    "Horror",
+    "Music",
+    "Mystery",
+    "Romance",
+    "Science Fiction",
+    "Thriller",
+    "TV Movie",
+    "War",
+    "Western",
+]
 
 
 def _resolve_timezone_name(raw: str) -> str:
@@ -354,6 +376,8 @@ async def emby_settings_page(request: Request, session: AsyncSession = Depends(g
             "timezone": tz,
             "emby_schedule_start_display": _to_12h(settings.emby_schedule_start, "12:00 AM"),
             "emby_schedule_end_display": _to_12h(settings.emby_schedule_end, "11:59 PM"),
+            "movie_genre_options": _MOVIE_GENRE_OPTIONS,
+            "selected_movie_genres": parse_genres_csv(getattr(settings, "emby_rule_movie_genres_csv", "")),
         },
     )
 
@@ -375,6 +399,7 @@ async def emby_preview_page(request: Request, session: AsyncSession = Depends(ge
     tv_unwatched_days = rules["tv_unwatched_days"]
     scan_limit = max(1, int(getattr(settings, "emby_max_items_scan", 2000) or 2000))
     max_deletes = max(1, int(getattr(settings, "emby_max_deletes_per_run", 25) or 25))
+    selected_movie_genres = parse_genres_csv(getattr(settings, "emby_rule_movie_genres_csv", ""))
 
     if not settings.emby_url or not settings.emby_api_key:
         error = "Emby URL and API key are required."
@@ -406,6 +431,8 @@ async def emby_preview_page(request: Request, session: AsyncSession = Depends(ge
                         tv_delete_watched=tv_delete_watched,
                         tv_unwatched_days=tv_unwatched_days,
                     )
+                    if str(item.get("Type", "")).strip() == "Movie" and not movie_matches_selected_genres(item, selected_movie_genres):
+                        is_candidate = False
                     if not is_candidate:
                         continue
                     rows.append(
@@ -445,6 +472,7 @@ async def emby_preview_page(request: Request, session: AsyncSession = Depends(ge
             "tv_unwatched_days": tv_unwatched_days,
             "scan_limit": scan_limit,
             "max_deletes": max_deletes,
+            "selected_movie_genres_display": sorted(selected_movie_genres),
             "dry_run": bool(getattr(settings, "emby_dry_run", True)),
             "matched_count": len(rows),
             "now": datetime.utcnow(),
@@ -585,6 +613,7 @@ async def save_cleaner_settings(
     emby_max_deletes_per_run: int = Form(25),
     emby_rule_movie_watched_rating_below: int = Form(0),
     emby_rule_movie_unwatched_days: int = Form(0),
+    emby_rule_movie_genres: list[str] = Form([]),
     emby_rule_tv_delete_watched: bool = Form(False),
     emby_rule_tv_unwatched_days: int = Form(0),
     session: AsyncSession = Depends(get_session),
@@ -599,6 +628,8 @@ async def save_cleaner_settings(
     row.emby_max_deletes_per_run = max(1, min(500, int(emby_max_deletes_per_run or 25)))
     row.emby_rule_movie_watched_rating_below = max(0, min(10, int(emby_rule_movie_watched_rating_below or 0)))
     row.emby_rule_movie_unwatched_days = max(0, min(36500, int(emby_rule_movie_unwatched_days or 0)))
+    selected_genres = sorted({str(v).strip() for v in (emby_rule_movie_genres or []) if str(v).strip()})
+    row.emby_rule_movie_genres_csv = ",".join(selected_genres)
     row.emby_rule_tv_delete_watched = emby_rule_tv_delete_watched
     row.emby_rule_tv_watched_rating_below = 0
     row.emby_rule_tv_unwatched_days = max(0, min(36500, int(emby_rule_tv_unwatched_days or 0)))

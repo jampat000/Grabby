@@ -14,7 +14,7 @@
   </div>
 
   <div class="card module-content">
-      <h2>Cleaner review</h2>
+      <h2>Cleaner Review</h2>
       <div class="hint">Shows exact titles that match your current rules. This page does not delete anything.</div>
 
     <div class="preview-stats">
@@ -33,7 +33,7 @@
     </div>
 
     <div class="btnbar">
-      <a class="btn" href="/cleaner">Refresh review</a>
+      <a class="btn" href="/cleaner">Refresh Status</a>
     </div>
 
     <div class="section small">
@@ -43,6 +43,7 @@
       <strong>Movie unwatched rule:</strong> {% if movie_unwatched_days > 0 %}{{ movie_unwatched_days }} days{% else %}disabled{% endif %} |
       <strong>TV watched delete:</strong> {% if tv_delete_watched %}enabled{% else %}disabled{% endif %} |
       <strong>TV unwatched rule:</strong> {% if tv_unwatched_days > 0 %}{{ tv_unwatched_days }} days{% else %}disabled{% endif %} |
+      <strong>Movie genres:</strong> {% if selected_movie_genres_display %}{{ selected_movie_genres_display | join(", ") }}{% else %}all{% endif %} |
       <strong>Scan limit:</strong> {{ scan_limit }} |
       <strong>Max rows:</strong> {{ max_deletes }}
     </div>

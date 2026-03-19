@@ -39,6 +39,25 @@ def emby_user_played(user_data: dict) -> bool:
     return bool(user_data.get("Played"))
 
 
+def parse_genres_csv(raw: str | None) -> set[str]:
+    if not raw:
+        return set()
+    out: set[str] = set()
+    for chunk in raw.split(","):
+        v = chunk.strip().lower()
+        if v:
+            out.add(v)
+    return out
+
+
+def movie_matches_selected_genres(item: dict, selected_genres: set[str]) -> bool:
+    if not selected_genres:
+        return True
+    genres = item.get("Genres") if isinstance(item.get("Genres"), list) else []
+    item_genres = {str(g).strip().lower() for g in genres if str(g).strip()}
+    return bool(item_genres & selected_genres)
+
+
 def evaluate_candidate(
     item: dict,
     *,

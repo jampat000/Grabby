@@ -34,12 +34,12 @@ Expected output files:
 
 ```powershell
 cd C:\Users\User\grabby
-.\.venv\Scripts\uvicorn app.main:app --host 127.0.0.1 --port 8765
+.\scripts\dev-start.ps1
 ```
 
 Then browse to:
 
-- `http://127.0.0.1:8765`
+- URL shown by the script (usually `http://127.0.0.1:8766`)
 
 ## Restore from backup zip
 

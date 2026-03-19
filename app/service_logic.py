@@ -18,7 +18,7 @@ from app.arr_client import (
 from app.models import ActivityLog, AppSettings, AppSnapshot, JobRunLog
 from app.schedule import in_window
 from app.emby_client import EmbyClient, EmbyConfig
-from app.emby_rules import evaluate_candidate
+from app.emby_rules import evaluate_candidate, movie_matches_selected_genres, parse_genres_csv
 
 
 @dataclass(frozen=True)
@@ -229,6 +229,7 @@ async def run_once(session: AsyncSession) -> RunResult:
                     global_unwatched = max(0, int(getattr(settings, "emby_rule_unwatched_days", 0) or 0))
                     movie_rating_below = max(0, int(getattr(settings, "emby_rule_movie_watched_rating_below", 0) or 0)) or global_rating
                     movie_unwatched_days = max(0, int(getattr(settings, "emby_rule_movie_unwatched_days", 0) or 0)) or global_unwatched
+                    selected_movie_genres = parse_genres_csv(getattr(settings, "emby_rule_movie_genres_csv", ""))
                     tv_delete_watched = bool(getattr(settings, "emby_rule_tv_delete_watched", False))
                     tv_unwatched_days = max(0, int(getattr(settings, "emby_rule_tv_unwatched_days", 0) or 0)) or global_unwatched
                     dry_run = bool(getattr(settings, "emby_dry_run", True))
@@ -249,6 +250,8 @@ async def run_once(session: AsyncSession) -> RunResult:
                                 tv_delete_watched=tv_delete_watched,
                                 tv_unwatched_days=tv_unwatched_days,
                             )
+                            if str(item.get("Type", "")).strip() == "Movie" and not movie_matches_selected_genres(item, selected_movie_genres):
+                                is_candidate = False
                             if is_candidate:
                                 name = str(item.get("Name", "") or item_id)
                                 candidates.append((item_id, name))

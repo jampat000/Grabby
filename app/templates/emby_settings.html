@@ -14,7 +14,7 @@
   </div>
 
   <div class="card module-content">
-      <h2>Cleaner settings</h2>
+      <h2>Cleaner Settings</h2>
       <div class="hint">Dedicated Emby configuration tab. Managed from the Cleaner section.</div>
 
       {% if emby and emby.status_message and not emby.status_message.startswith("Test") %}
@@ -100,6 +100,15 @@
                 <label>Delete unwatched movies older than N days</label>
                 <input class="number" type="number" name="emby_rule_movie_unwatched_days" value="{{ settings.emby_rule_movie_unwatched_days }}" min="0" max="36500" />
                 <div class="small">Set 0 to disable this rule.</div>
+              </div>
+              <div class="field">
+                <label>Only delete movies in selected genres</label>
+                <select class="input" name="emby_rule_movie_genres" multiple size="8">
+                  {% for genre in movie_genre_options %}
+                  <option value="{{ genre }}" {% if genre.lower() in selected_movie_genres %}selected{% endif %}>{{ genre }}</option>
+                  {% endfor %}
+                </select>
+                <div class="small">Optional. If selected, only movies matching at least one selected genre are eligible.</div>
               </div>
             </div>
           </div>
