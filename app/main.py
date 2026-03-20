@@ -828,6 +828,7 @@ async def save_settings(
     radarr_schedule_end: str = Form("23:59"),
     interval_minutes: int = Form(60),
     timezone: str = Form("UTC"),
+    save_scope: str = Form("all"),
     session: AsyncSession = Depends(get_session),
 ) -> RedirectResponse:
     # Validate via Pydantic (keeps server-side constraints consistent)
@@ -849,35 +850,36 @@ async def save_settings(
     )
 
     row = await _get_or_create_settings(session)
+    scope = (save_scope or "all").strip().lower()
     # Keep Arr + global settings isolated from Emby settings.
-    row.sonarr_enabled = data.sonarr_enabled
-    row.sonarr_url = data.sonarr_url
-    row.sonarr_api_key = data.sonarr_api_key
-    row.sonarr_search_missing = data.sonarr_search_missing
-    row.sonarr_search_upgrades = data.sonarr_search_upgrades
-    row.sonarr_max_items_per_run = data.sonarr_max_items_per_run
+    if scope in ("all", "sonarr"):
+        row.sonarr_enabled = data.sonarr_enabled
+        row.sonarr_url = data.sonarr_url
+        row.sonarr_api_key = data.sonarr_api_key
+        row.sonarr_search_missing = data.sonarr_search_missing
+        row.sonarr_search_upgrades = data.sonarr_search_upgrades
+        row.sonarr_max_items_per_run = data.sonarr_max_items_per_run
+        row.sonarr_schedule_enabled = sonarr_schedule_enabled
+        row.sonarr_schedule_days = (sonarr_schedule_days or "Mon,Tue,Wed,Thu,Fri,Sat,Sun").strip()
+        row.sonarr_schedule_start = _normalize_hhmm(sonarr_schedule_start, "00:00")
+        row.sonarr_schedule_end = _normalize_hhmm(sonarr_schedule_end, "23:59")
 
-    row.radarr_enabled = data.radarr_enabled
-    row.radarr_url = data.radarr_url
-    row.radarr_api_key = data.radarr_api_key
-    row.radarr_search_missing = data.radarr_search_missing
-    row.radarr_search_upgrades = data.radarr_search_upgrades
-    row.radarr_max_items_per_run = data.radarr_max_items_per_run
+    if scope in ("all", "radarr"):
+        row.radarr_enabled = data.radarr_enabled
+        row.radarr_url = data.radarr_url
+        row.radarr_api_key = data.radarr_api_key
+        row.radarr_search_missing = data.radarr_search_missing
+        row.radarr_search_upgrades = data.radarr_search_upgrades
+        row.radarr_max_items_per_run = data.radarr_max_items_per_run
+        row.radarr_schedule_enabled = radarr_schedule_enabled
+        row.radarr_schedule_days = (radarr_schedule_days or "Mon,Tue,Wed,Thu,Fri,Sat,Sun").strip()
+        row.radarr_schedule_start = _normalize_hhmm(radarr_schedule_start, "00:00")
+        row.radarr_schedule_end = _normalize_hhmm(radarr_schedule_end, "23:59")
 
-    row.interval_minutes = data.interval_minutes
+    if scope in ("all", "global"):
+        row.interval_minutes = data.interval_minutes
+        row.timezone = _resolve_timezone_name(timezone)
 
-    # Per-app schedules
-    row.sonarr_schedule_enabled = sonarr_schedule_enabled
-    row.sonarr_schedule_days = (sonarr_schedule_days or "Mon,Tue,Wed,Thu,Fri,Sat,Sun").strip()
-    row.sonarr_schedule_start = _normalize_hhmm(sonarr_schedule_start, "00:00")
-    row.sonarr_schedule_end = _normalize_hhmm(sonarr_schedule_end, "23:59")
-
-    row.radarr_schedule_enabled = radarr_schedule_enabled
-    row.radarr_schedule_days = (radarr_schedule_days or "Mon,Tue,Wed,Thu,Fri,Sat,Sun").strip()
-    row.radarr_schedule_start = _normalize_hhmm(radarr_schedule_start, "00:00")
-    row.radarr_schedule_end = _normalize_hhmm(radarr_schedule_end, "23:59")
-
-    row.timezone = _resolve_timezone_name(timezone)
     row.updated_at = utc_now_naive()
     await session.commit()
 
@@ -943,30 +945,38 @@ async def save_cleaner_settings(
     emby_rule_tv_people: str = Form(""),
     emby_rule_tv_people_credit_types: list[str] = Form([]),
     emby_rule_tv_unwatched_days: int = Form(0),
+    save_scope: str = Form("all"),
     session: AsyncSession = Depends(get_session),
 ) -> RedirectResponse:
     row = await _get_or_create_settings(session)
-    row.emby_dry_run = emby_dry_run
-    row.emby_schedule_enabled = emby_schedule_enabled
-    row.emby_schedule_days = (emby_schedule_days or "Mon,Tue,Wed,Thu,Fri,Sat,Sun").strip()
-    row.emby_schedule_start = _normalize_hhmm(emby_schedule_start, "00:00")
-    row.emby_schedule_end = _normalize_hhmm(emby_schedule_end, "23:59")
-    _scan = int(emby_max_items_scan)
-    row.emby_max_items_scan = 0 if _scan <= 0 else max(1, min(100_000, _scan))
-    row.emby_max_deletes_per_run = max(1, min(500, int(emby_max_deletes_per_run or 25)))
-    row.emby_rule_movie_watched_rating_below = max(0, min(10, int(emby_rule_movie_watched_rating_below or 0)))
-    row.emby_rule_movie_unwatched_days = max(0, min(36500, int(emby_rule_movie_unwatched_days or 0)))
-    selected_genres = sorted({str(v).strip() for v in (emby_rule_movie_genres or []) if str(v).strip()})
-    row.emby_rule_movie_genres_csv = ",".join(selected_genres)
-    row.emby_rule_movie_people_csv = (emby_rule_movie_people or "").strip()[:8000]
-    row.emby_rule_movie_people_credit_types_csv = _people_credit_types_csv_from_form(emby_rule_movie_people_credit_types)
-    row.emby_rule_tv_delete_watched = emby_rule_tv_delete_watched
-    selected_tv_genres = sorted({str(v).strip() for v in (emby_rule_tv_genres or []) if str(v).strip()})
-    row.emby_rule_tv_genres_csv = ",".join(selected_tv_genres)
-    row.emby_rule_tv_people_csv = (emby_rule_tv_people or "").strip()[:8000]
-    row.emby_rule_tv_people_credit_types_csv = _people_credit_types_csv_from_form(emby_rule_tv_people_credit_types)
-    row.emby_rule_tv_watched_rating_below = 0
-    row.emby_rule_tv_unwatched_days = max(0, min(36500, int(emby_rule_tv_unwatched_days or 0)))
+    scope = (save_scope or "all").strip().lower()
+    if scope in ("all", "global"):
+        row.emby_dry_run = emby_dry_run
+        row.emby_schedule_enabled = emby_schedule_enabled
+        row.emby_schedule_days = (emby_schedule_days or "Mon,Tue,Wed,Thu,Fri,Sat,Sun").strip()
+        row.emby_schedule_start = _normalize_hhmm(emby_schedule_start, "00:00")
+        row.emby_schedule_end = _normalize_hhmm(emby_schedule_end, "23:59")
+        _scan = int(emby_max_items_scan)
+        row.emby_max_items_scan = 0 if _scan <= 0 else max(1, min(100_000, _scan))
+        row.emby_max_deletes_per_run = max(1, min(500, int(emby_max_deletes_per_run or 25)))
+
+    if scope in ("all", "movies"):
+        row.emby_rule_movie_watched_rating_below = max(0, min(10, int(emby_rule_movie_watched_rating_below or 0)))
+        row.emby_rule_movie_unwatched_days = max(0, min(36500, int(emby_rule_movie_unwatched_days or 0)))
+        selected_genres = sorted({str(v).strip() for v in (emby_rule_movie_genres or []) if str(v).strip()})
+        row.emby_rule_movie_genres_csv = ",".join(selected_genres)
+        row.emby_rule_movie_people_csv = (emby_rule_movie_people or "").strip()[:8000]
+        row.emby_rule_movie_people_credit_types_csv = _people_credit_types_csv_from_form(emby_rule_movie_people_credit_types)
+
+    if scope in ("all", "tv"):
+        row.emby_rule_tv_delete_watched = emby_rule_tv_delete_watched
+        selected_tv_genres = sorted({str(v).strip() for v in (emby_rule_tv_genres or []) if str(v).strip()})
+        row.emby_rule_tv_genres_csv = ",".join(selected_tv_genres)
+        row.emby_rule_tv_people_csv = (emby_rule_tv_people or "").strip()[:8000]
+        row.emby_rule_tv_people_credit_types_csv = _people_credit_types_csv_from_form(emby_rule_tv_people_credit_types)
+        row.emby_rule_tv_watched_rating_below = 0
+        row.emby_rule_tv_unwatched_days = max(0, min(36500, int(emby_rule_tv_unwatched_days or 0)))
+
     # Keep legacy global fields in sync for backward compatibility.
     row.emby_rule_watched_rating_below = max(
         row.emby_rule_movie_watched_rating_below,
