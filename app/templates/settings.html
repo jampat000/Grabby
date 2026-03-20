@@ -16,13 +16,13 @@
     <h2>Grabby Settings</h2>
     {% set im = request.query_params.get('import', '') %}
     {% if im == 'ok' %}
-    <div class="banner banner-ok" role="status">Settings restored from backup. <strong>Restart the Grabby Windows service</strong> (or the app) so schedules pick up changes.</div>
+    <div class="banner banner-ok" role="status"><strong>Settings</strong> restored from backup. <strong>Restart</strong> the <strong>Grabby</strong> Windows service (or the app) so schedules pick up changes.</div>
     {% elif im == 'need_confirm' %}
-    <div class="banner banner-warn" role="alert">Import cancelled — check the confirmation box to replace settings.</div>
+    <div class="banner banner-warn" role="alert"><strong>Import</strong> cancelled—check the confirmation box to replace settings.</div>
     {% elif im == 'empty' %}
-    <div class="banner banner-warn" role="alert">Import cancelled — the file was empty.</div>
+    <div class="banner banner-warn" role="alert"><strong>Import</strong> cancelled—the file was empty.</div>
     {% elif im == 'fail' %}
-    <div class="banner banner-warn" role="alert">Import failed: {{ request.query_params.get('reason', 'Unknown error') | e }}</div>
+    <div class="banner banner-warn" role="alert"><strong>Import</strong> failed: {{ request.query_params.get('reason', 'Unknown error') | e }}</div>
     {% endif %}
     <div class="hint">Use <span class="kbd">http://</span> for direct Sonarr/Radarr/Emby connections unless you have HTTPS configured.</div>
 
@@ -189,34 +189,34 @@
 
   <div class="card module-content backup-restore-card">
     <h2>Backup &amp; Restore</h2>
-    <p class="hint backup-restore-lead">Save <strong>everything in Settings</strong> to one file: <strong>Grabby</strong> (Sonarr, Radarr, schedules) and <strong>Cleaner</strong> (Emby connection, rules, schedules). Activity history is <em>not</em> included. Keep the file private — it contains API keys.</p>
+    <p class="hint backup-restore-lead">Saves <strong>everything in Settings</strong> to one file: <strong>Grabby</strong> (Sonarr, Radarr, schedules) and <strong>Cleaner</strong> (Emby connection, rules, schedules). <strong>Activity</strong> history is <em>not</em> included. Treat the file as secret—it contains your API keys.</p>
 
     <div class="backup-panels">
       <div class="backup-panel backup-panel-download">
         <div class="backup-panel-head">
           <span class="backup-panel-icon" aria-hidden="true">⬇</span>
-          <h3 class="backup-panel-title">Download backup</h3>
+          <h3 class="backup-panel-title">Download Backup</h3>
         </div>
-        <p class="small backup-panel-desc">Creates <code class="code-inline">grabby-settings-backup-YYYYMMDD.json</code> with your current Grabby and Cleaner settings.</p>
-        <a class="btn backup-panel-btn" href="/settings/backup/export" download>Download backup</a>
+        <p class="small backup-panel-desc">Creates <code class="code-inline">grabby-settings-backup-YYYYMMDD.json</code> with your current <strong>Grabby</strong> and <strong>Cleaner</strong> settings.</p>
+        <a class="btn backup-panel-btn" href="/settings/backup/export" download>Download Backup</a>
       </div>
 
       <div class="backup-panel backup-panel-restore">
         <div class="backup-panel-head">
           <span class="backup-panel-icon" aria-hidden="true">⬆</span>
-          <h3 class="backup-panel-title">Restore from backup</h3>
+          <h3 class="backup-panel-title">Restore from Backup</h3>
         </div>
-        <p class="small backup-panel-desc">Replaces <strong>all</strong> saved Grabby and Cleaner settings on this PC. Does not change dashboard activity history.</p>
+        <p class="small backup-panel-desc">Replaces <strong>all</strong> saved <strong>Grabby</strong> and <strong>Cleaner</strong> settings on this PC. Does not change dashboard <strong>Activity</strong> history.</p>
         <form method="post" action="/settings/backup/import" enctype="multipart/form-data" class="backup-restore-form">
           <div class="field backup-file-field">
-            <label class="backup-file-label" for="backup-file-input">Choose backup file</label>
+            <label class="backup-file-label" for="backup-file-input">Choose Backup File</label>
             <input id="backup-file-input" class="input backup-file-input" type="file" name="file" accept="application/json,.json,.JSON" required />
           </div>
           <div class="checkline backup-confirm-line">
             <input type="checkbox" name="confirm" value="yes" id="backup-confirm" />
-            <label for="backup-confirm">I understand this will <strong>overwrite</strong> my current Grabby and Cleaner settings</label>
+            <label for="backup-confirm">I understand this will <strong>overwrite</strong> my current <strong>Grabby</strong> and <strong>Cleaner</strong> settings.</label>
           </div>
-          <button type="submit" class="btn secondary backup-restore-submit">Restore from backup</button>
+          <button type="submit" class="btn secondary backup-restore-submit">Restore from Backup</button>
         </form>
       </div>
     </div>

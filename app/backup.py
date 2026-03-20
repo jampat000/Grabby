@@ -41,7 +41,7 @@ def build_export_payload(row: AppSettings) -> dict[str, Any]:
         "includes": {
             "grabby": True,
             "cleaner": True,
-            "note": "Single app_settings row: Sonarr/Radarr/schedules and Emby Cleaner rules together.",
+            "note": "Single app_settings row: Sonarr/Radarr/schedules and Emby/Cleaner rules together.",
         },
         "settings": app_settings_to_plain(row),
     }

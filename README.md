@@ -44,9 +44,9 @@ GitHub Actions runs **pip-audit** on dependencies and **CodeQL** on Python code 
 
 This project is licensed under the **MIT License** — see [`LICENSE`](LICENSE).
 
-## Backup & restore
+## Backup & Restore
 
-Export **Grabby + Cleaner settings** to **one JSON file** from **Settings → Backup & Restore** (move PCs, reinstall, keep API keys). Details: **[`HOWTO-RESTORE.md`](HOWTO-RESTORE.md)**.
+Export **Grabby** and **Cleaner** settings to **one JSON file** from **Settings** → **Backup & Restore** (move PCs, reinstall, keep API keys). Details: **[`HOWTO-RESTORE.md`](HOWTO-RESTORE.md)**.
 
 ## Changelog
 
