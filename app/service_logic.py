@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+import re
 
 import httpx
 from sqlalchemy import select
@@ -86,6 +87,118 @@ def _sonarr_series_ids_for_episode_batch(records: list[dict], *episode_keys: str
             seen_series.add(sid)
             series_out.append(sid)
     return series_out
+
+
+def _norm_title(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(s or "").strip().lower())
+
+
+def _safe_int(v: object) -> int | None:
+    try:
+        n = int(str(v).strip())
+        return n if n > 0 else None
+    except Exception:
+        return None
+
+
+def _emby_provider_id(item: dict, key: str) -> str:
+    providers = item.get("ProviderIds") if isinstance(item.get("ProviderIds"), dict) else {}
+    return str(providers.get(key) or "").strip()
+
+
+def _emby_year(item: dict) -> int | None:
+    y = _safe_int(item.get("ProductionYear"))
+    if y:
+        return y
+    pd = str(item.get("PremiereDate") or "").strip()
+    if len(pd) >= 4 and pd[:4].isdigit():
+        return int(pd[:4])
+    return None
+
+
+def _match_radarr_movie_id(emby_item: dict, radarr_movies: list[dict]) -> int | None:
+    emby_tmdb = _safe_int(_emby_provider_id(emby_item, "Tmdb"))
+    emby_imdb = _emby_provider_id(emby_item, "Imdb").lower()
+    emby_title = _norm_title(str(emby_item.get("Name") or ""))
+    emby_year = _emby_year(emby_item)
+
+    if emby_tmdb:
+        for m in radarr_movies:
+            if _safe_int(m.get("tmdbId")) == emby_tmdb:
+                return _safe_int(m.get("id"))
+    if emby_imdb:
+        for m in radarr_movies:
+            if str(m.get("imdbId") or "").strip().lower() == emby_imdb:
+                return _safe_int(m.get("id"))
+    for m in radarr_movies:
+        if _norm_title(str(m.get("title") or "")) != emby_title:
+            continue
+        my = _safe_int(m.get("year"))
+        if emby_year is None or my is None or emby_year == my:
+            return _safe_int(m.get("id"))
+    return None
+
+
+def _match_sonarr_series_id(emby_item: dict, sonarr_series: list[dict]) -> int | None:
+    emby_tvdb = _safe_int(_emby_provider_id(emby_item, "Tvdb"))
+    emby_title = _norm_title(str(emby_item.get("Name") or ""))
+    emby_year = _emby_year(emby_item)
+
+    if emby_tvdb:
+        for s in sonarr_series:
+            if _safe_int(s.get("tvdbId")) == emby_tvdb:
+                return _safe_int(s.get("id"))
+    for s in sonarr_series:
+        if _norm_title(str(s.get("title") or "")) != emby_title:
+            continue
+        sy = _safe_int(s.get("year"))
+        if emby_year is None or sy is None or emby_year == sy:
+            return _safe_int(s.get("id"))
+    return None
+
+
+def _episode_ids_for_emby_tv_item(emby_item: dict, sonarr_episodes: list[dict]) -> list[int]:
+    """Map an Emby TV candidate to Sonarr episode ids (episode/season/series scopes)."""
+    item_type = str(emby_item.get("Type") or "").strip()
+    if item_type == "Series":
+        return [int(e.get("id")) for e in sonarr_episodes if _safe_int(e.get("id"))]
+
+    season_no = _safe_int(emby_item.get("ParentIndexNumber"))
+    episode_no = _safe_int(emby_item.get("IndexNumber"))
+    episode_end = _safe_int(emby_item.get("IndexNumberEnd")) or episode_no
+
+    # Some Emby payloads use ParentIndexNumber as season for Season items.
+    if item_type == "Season":
+        if season_no is None:
+            season_no = _safe_int(emby_item.get("IndexNumber"))
+        if season_no is None:
+            return []
+        return [
+            int(e.get("id"))
+            for e in sonarr_episodes
+            if _safe_int(e.get("id")) and _safe_int(e.get("seasonNumber")) == season_no
+        ]
+
+    if item_type == "Episode":
+        if season_no is None or episode_no is None:
+            return []
+        out: list[int] = []
+        lo = min(episode_no, episode_end or episode_no)
+        hi = max(episode_no, episode_end or episode_no)
+        for e in sonarr_episodes:
+            eid = _safe_int(e.get("id"))
+            if not eid:
+                continue
+            if _safe_int(e.get("seasonNumber")) != season_no:
+                continue
+            e_no = _safe_int(e.get("episodeNumber"))
+            if e_no is None:
+                continue
+            if lo <= e_no <= hi:
+                out.append(eid)
+        return out
+
+    return []
 
 
 async def run_once(session: AsyncSession) -> RunResult:
@@ -304,7 +417,7 @@ async def run_once(session: AsyncSession) -> RunResult:
                         actions.append("Emby: skipped (no Emby Cleaner rules enabled)")
                     else:
                         items = await emby.items_for_user(user_id=effective_user_id, limit=scan_limit)
-                        candidates: list[tuple[str, str]] = []
+                        candidates: list[tuple[str, str, str, dict]] = []
                         for item in items:
                             item_id = str(item.get("Id", "")).strip()
                             if not item_id:
@@ -331,14 +444,64 @@ async def run_once(session: AsyncSession) -> RunResult:
                                 is_candidate = False
                             if is_candidate:
                                 name = str(item.get("Name", "") or item_id)
-                                candidates.append((item_id, name))
+                                item_type = str(item.get("Type", "") or "").strip()
+                                candidates.append((item_id, name, item_type, item))
                                 if len(candidates) >= max_deletes:
                                     break
 
                         if dry_run:
                             actions.append(f"Emby: dry-run matched {len(candidates)} item(s)")
                         else:
-                            for item_id, _ in candidates:
+                            movie_candidates = [raw for _, _, t, raw in candidates if t == "Movie"]
+                            tv_candidates = [raw for _, _, t, raw in candidates if t in {"Series", "Season", "Episode"}]
+
+                            if movie_candidates and settings.radarr_url and settings.radarr_api_key:
+                                radarr2 = ArrClient(ArrConfig(settings.radarr_url, settings.radarr_api_key))
+                                try:
+                                    catalog = await radarr2.movies()
+                                    movie_ids: list[int] = []
+                                    for item in movie_candidates:
+                                        mid = _match_radarr_movie_id(item, catalog)
+                                        if mid and mid not in movie_ids:
+                                            movie_ids.append(mid)
+                                    if movie_ids:
+                                        await radarr2.unmonitor_movies(movie_ids=movie_ids)
+                                    actions.append(
+                                        f"Radarr: unmonitored {len(movie_ids)}/{len(movie_candidates)} movie(s) after Emby delete match"
+                                    )
+                                except Exception as e:
+                                    actions.append(f"Radarr: unmonitor warning after Emby deletes: {format_http_error_detail(e)}")
+                                finally:
+                                    await radarr2.aclose()
+
+                            if tv_candidates and settings.sonarr_url and settings.sonarr_api_key:
+                                sonarr2 = ArrClient(ArrConfig(settings.sonarr_url, settings.sonarr_api_key))
+                                try:
+                                    catalog = await sonarr2.series()
+                                    episode_ids: list[int] = []
+                                    seen_episode_ids: set[int] = set()
+                                    episodes_cache: dict[int, list[dict]] = {}
+                                    for item in tv_candidates:
+                                        sid = _match_sonarr_series_id(item, catalog)
+                                        if not sid:
+                                            continue
+                                        if sid not in episodes_cache:
+                                            episodes_cache[sid] = await sonarr2.episodes_for_series(series_id=sid)
+                                        for eid in _episode_ids_for_emby_tv_item(item, episodes_cache[sid]):
+                                            if eid not in seen_episode_ids:
+                                                seen_episode_ids.add(eid)
+                                                episode_ids.append(eid)
+                                    if episode_ids:
+                                        await sonarr2.unmonitor_episodes(episode_ids=episode_ids)
+                                    actions.append(
+                                        f"Sonarr: unmonitored {len(episode_ids)} episode(s) for {len(tv_candidates)} TV delete candidate(s)"
+                                    )
+                                except Exception as e:
+                                    actions.append(f"Sonarr: unmonitor warning after Emby deletes: {format_http_error_detail(e)}")
+                                finally:
+                                    await sonarr2.aclose()
+
+                            for item_id, _, _, _ in candidates:
                                 await emby.delete_item(item_id)
                             actions.append(f"Emby: deleted {len(candidates)} item(s)")
 
