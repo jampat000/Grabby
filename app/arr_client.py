@@ -63,6 +63,26 @@ class ArrClient:
         data = r.json()
         return data if isinstance(data, list) else []
 
+    async def movies(self) -> list[dict]:
+        """Radarr movie catalog."""
+        r = await self._req("GET", "/api/v3/movie")
+        r.raise_for_status()
+        data = r.json()
+        return data if isinstance(data, list) else []
+
+    async def series(self) -> list[dict]:
+        """Sonarr series catalog."""
+        r = await self._req("GET", "/api/v3/series")
+        r.raise_for_status()
+        data = r.json()
+        return data if isinstance(data, list) else []
+
+    async def episodes_for_series(self, *, series_id: int) -> list[dict]:
+        r = await self._req("GET", "/api/v3/episode", params={"seriesId": int(series_id)})
+        r.raise_for_status()
+        data = r.json()
+        return data if isinstance(data, list) else []
+
     async def ensure_tag(self, label: str) -> int:
         wanted = (label or "").strip()
         if not wanted:
@@ -110,6 +130,27 @@ class ArrClient:
             "applyTags": "add",
         }
         r = await self._req("PUT", "/api/v3/movie/editor", json=payload)
+        r.raise_for_status()
+
+    async def unmonitor_movies(self, *, movie_ids: list[int]) -> None:
+        if not movie_ids:
+            return
+        payload = {"movieIds": movie_ids, "monitored": False}
+        r = await self._req("PUT", "/api/v3/movie/editor", json=payload)
+        r.raise_for_status()
+
+    async def unmonitor_series(self, *, series_ids: list[int]) -> None:
+        if not series_ids:
+            return
+        payload = {"seriesIds": series_ids, "monitored": False}
+        r = await self._req("PUT", "/api/v3/series/editor", json=payload)
+        r.raise_for_status()
+
+    async def unmonitor_episodes(self, *, episode_ids: list[int]) -> None:
+        if not episode_ids:
+            return
+        payload = {"episodeIds": episode_ids, "monitored": False}
+        r = await self._req("PUT", "/api/v3/episode/monitor", json=payload)
         r.raise_for_status()
 
 

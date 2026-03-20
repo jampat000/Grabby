@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.14] - 2026-03-20
+
+### Changed
+
+- **Cleaner -> Sonarr anti-boomerang:** after live TV deletes, Sonarr is now unmonitored at the **episode level** (`/api/v3/episode/monitor`) instead of whole-series unmonitor.
+- **Matching logic:** TV delete candidates map from Emby to Sonarr using `Tvdb` first, then `title+year`; season/series deletes expand to all matching episode IDs.
+
 ## [1.0.13] - 2026-03-20
 
 ### Fixed
