@@ -16,3 +16,14 @@ When the user asks to **bump** (version/release) **and restart local**, or clear
 **Tagging:** If the project’s release process uses `v*` tags (see `CHANGELOG.md` / CI), remind the user to tag and push tags after the commit, or run `git tag vX.Y.Z && git push origin vX.Y.Z` when they want the installer workflow.
 
 Do **not** treat “bump and restart local” as complete without **push** (after a successful commit).
+
+## When done — tell the user (every time)
+
+After the steps above, **briefly confirm** in your reply:
+
+1. **Version** — `VERSION` is now **vX.Y.Z** and `CHANGELOG.md` is updated.
+2. **GitHub** — Commit is **pushed** to `origin` (branch name + PR link if `master` is protected).
+3. **Local** — The repo **`VERSION`** file matches the release; **restart** the dev server so the sidebar shows **vX.Y.Z** and migrations run **(dev: `http://127.0.0.1:8766`** unless they use port **8765** for the installed service).
+4. **Optional** — Remind them to **merge PR** and **`git tag vX.Y.Z && git push origin vX.Y.Z`** if they use tagged releases / CI.
+
+Do **not** end the task without this **short recap** so they know what to do next on GitHub and locally.

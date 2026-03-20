@@ -27,8 +27,8 @@ class AppSettings(Base):
     sonarr_schedule_days: Mapped[str] = mapped_column(Text, default="Mon,Tue,Wed,Thu,Fri,Sat,Sun")
     sonarr_schedule_start: Mapped[str] = mapped_column(String(5), default="00:00")  # HH:MM
     sonarr_schedule_end: Mapped[str] = mapped_column(String(5), default="23:59")  # HH:MM
-    # 0 = use interval_minutes (scheduler / Emby Cleaner cadence; edited in Cleaner Settings) for run cadence + Arr cooldown fallback.
-    sonarr_interval_minutes: Mapped[int] = mapped_column(Integer, default=0)
+    # Minutes between Sonarr runs when schedule allows. 0 = use interval_minutes (Global Settings). Default 60.
+    sonarr_interval_minutes: Mapped[int] = mapped_column(Integer, default=60)
     sonarr_last_run_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Radarr
@@ -42,13 +42,14 @@ class AppSettings(Base):
     radarr_schedule_days: Mapped[str] = mapped_column(Text, default="Mon,Tue,Wed,Thu,Fri,Sat,Sun")
     radarr_schedule_start: Mapped[str] = mapped_column(String(5), default="00:00")  # HH:MM
     radarr_schedule_end: Mapped[str] = mapped_column(String(5), default="23:59")  # HH:MM
-    # 0 = use interval_minutes (scheduler / Emby Cleaner cadence; edited in Cleaner Settings) for run cadence + Arr cooldown fallback.
-    radarr_interval_minutes: Mapped[int] = mapped_column(Integer, default=0)
+    # Minutes between Radarr runs when schedule allows. 0 = use interval_minutes (Global Settings). Default 60.
+    radarr_interval_minutes: Mapped[int] = mapped_column(Integer, default=60)
     radarr_last_run_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    # Scheduler & display
-    # Base tick (Emby cadence) + default when Sonarr/Radarr run interval is 0.
+    # Scheduler: base tick + default when Sonarr/Radarr per-app run interval is 0 (Grabby Settings → Global).
     interval_minutes: Mapped[int] = mapped_column(Integer, default=60)
+    # How often Emby Cleaner may run (Cleaner Settings only; independent of Sonarr/Radarr).
+    emby_interval_minutes: Mapped[int] = mapped_column(Integer, default=60)
     emby_last_run_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     # Min minutes before Grabby will ask Sonarr/Radarr to search the same episode/movie again.
     # 0 = tie cooldown to each app’s run interval (Sonarr vs Radarr may differ). Default 1440 = 24h.

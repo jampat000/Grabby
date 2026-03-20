@@ -398,6 +398,7 @@ async def setup_wizard_save(
                 im = 60
             im = max(5, min(7 * 24 * 60, im))
             row.interval_minutes = im
+            row.emby_interval_minutes = im
             row.timezone = _resolve_timezone_name(timezone)
         row.updated_at = utc_now_naive()
         await session.commit()
@@ -828,7 +829,7 @@ async def save_settings(
     sonarr_search_missing: bool = Form(False),
     sonarr_search_upgrades: bool = Form(False),
     sonarr_max_items_per_run: int = Form(50),
-    sonarr_interval_minutes: int = Form(0),
+    sonarr_interval_minutes: int = Form(60),
     sonarr_schedule_enabled: bool = Form(False),
     sonarr_schedule_days: str = Form("Mon,Tue,Wed,Thu,Fri,Sat,Sun"),
     sonarr_schedule_start: str = Form("00:00"),
@@ -839,12 +840,13 @@ async def save_settings(
     radarr_search_missing: bool = Form(False),
     radarr_search_upgrades: bool = Form(False),
     radarr_max_items_per_run: int = Form(50),
-    radarr_interval_minutes: int = Form(0),
+    radarr_interval_minutes: int = Form(60),
     radarr_schedule_enabled: bool = Form(False),
     radarr_schedule_days: str = Form("Mon,Tue,Wed,Thu,Fri,Sat,Sun"),
     radarr_schedule_start: str = Form("00:00"),
     radarr_schedule_end: str = Form("23:59"),
     arr_search_cooldown_minutes: int = Form(1440),
+    interval_minutes: int = Form(60),
     timezone: str = Form("UTC"),
     save_scope: str = Form("all"),
     session: AsyncSession = Depends(get_session),
@@ -867,6 +869,7 @@ async def save_settings(
         radarr_max_items_per_run=radarr_max_items_per_run,
         radarr_interval_minutes=radarr_interval_minutes,
         arr_search_cooldown_minutes=arr_search_cooldown_minutes,
+        interval_minutes=interval_minutes,
     )
 
     row = await _get_or_create_settings(session)
@@ -899,6 +902,8 @@ async def save_settings(
         row.radarr_schedule_end = _normalize_hhmm(radarr_schedule_end, "23:59")
 
     if scope in ("all", "global"):
+        im = max(5, min(7 * 24 * 60, int(data.interval_minutes or 60)))
+        row.interval_minutes = im
         row.arr_search_cooldown_minutes = data.arr_search_cooldown_minutes
         row.timezone = _resolve_timezone_name(timezone)
 
@@ -950,7 +955,7 @@ async def save_emby_connection_settings(
 
 @app.post("/emby/settings/cleaner")
 async def save_cleaner_settings(
-    interval_minutes: int = Form(60),
+    emby_interval_minutes: int = Form(60),
     emby_dry_run: bool = Form(False),
     emby_schedule_enabled: bool = Form(False),
     emby_schedule_days: str = Form("Mon,Tue,Wed,Thu,Fri,Sat,Sun"),
@@ -973,9 +978,9 @@ async def save_cleaner_settings(
 ) -> RedirectResponse:
     row = await _get_or_create_settings(session)
     scope = (save_scope or "all").strip().lower()
-    # One shared form: persist tick interval on any save so it isn't ignored when saving TV/Movies only.
-    im = max(5, min(7 * 24 * 60, int(interval_minutes or 60)))
-    row.interval_minutes = im
+    # One shared form: persist Emby Cleaner cadence on any save (independent of Grabby / Arr scheduler base).
+    eim = max(5, min(7 * 24 * 60, int(emby_interval_minutes or 60)))
+    row.emby_interval_minutes = eim
 
     if scope in ("all", "global"):
         row.emby_dry_run = emby_dry_run

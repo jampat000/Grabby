@@ -524,7 +524,21 @@ dl.updates-kv dd{
 
 .section{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* One field in a .row was only using the left column (empty gap on the right). */
+.row > .field:only-child{grid-column:1 / -1}
+/* Schedule blocks: run interval matches Start/End — one column width (half row) on wide screens. */
+@media (min-width: 981px){
+  .row.row-schedule-pair > .field:only-child{grid-column:1 / 2}
+}
 @media (max-width: 980px){ .row{grid-template-columns:1fr} }
+
+/* Grabby Settings — Global: three fields balance instead of 2+1 awkward wrap */
+.settings-global-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:12px;
+  align-items:start;
+}
 .criteria-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
