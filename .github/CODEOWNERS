@@ -1,0 +1,4 @@
+# Default owners — used if you enable "Require review from Code Owners"
+# on branch protection. Update the handle for your fork/organization.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+* @jampat000
