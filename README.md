@@ -6,6 +6,24 @@
 - Re-trigger searches to **upgrade** existing items until the Arr app reports the **quality cutoff** is met (your Quality Profiles still decide what “better” means)
 - Optionally run **Emby Cleaner rules** (dry-run supported) to delete old/low-rated content. The **Cleaner** tab opens right away; use **Scan Emby for matches** when you want to pull your library and see what fits your rules (big libraries can take a bit).
 
+## Screenshots
+
+### Dashboard
+
+![Grabby Dashboard](docs/screenshots/dashboard.png)
+
+### Settings
+
+![Grabby Settings](docs/screenshots/settings.png)
+
+### Cleaner Settings
+
+![Grabby Cleaner Settings](docs/screenshots/cleaner-settings.png)
+
+### Activity
+
+![Grabby Activity](docs/screenshots/activity.png)
+
 ## Download (Windows installer)
 
 **[Download GrabbySetup.exe (latest GitHub Release)](https://github.com/jampat000/Grabby/releases/latest/download/GrabbySetup.exe)**
