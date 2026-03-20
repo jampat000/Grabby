@@ -77,6 +77,27 @@ async def migrate(engine: AsyncEngine) -> None:
     if not await _has_column(engine, table=table, column="emby_last_run_at"):
         await _add_column(engine, table=table, ddl="emby_last_run_at DATETIME")
 
+    # Emby Cleaner run cadence (separate from Grabby scheduler base / Arr fallback interval_minutes).
+    if not await _has_column(engine, table=table, column="emby_interval_minutes"):
+        await _add_column(engine, table=table, ddl="emby_interval_minutes INTEGER NOT NULL DEFAULT 60")
+        async with engine.begin() as conn:
+            await conn.execute(text("UPDATE app_settings SET emby_interval_minutes = interval_minutes WHERE 1=1"))
+
+    # One-time: legacy stored 0 → 60 so UI matches new defaults (0 = use scheduler base is still valid if set again).
+    if not await _has_column(engine, table=table, column="arr_interval_defaults_applied"):
+        await _add_column(engine, table=table, ddl="arr_interval_defaults_applied BOOLEAN NOT NULL DEFAULT 0")
+        async with engine.begin() as conn:
+            await conn.execute(
+                text(
+                    """
+                    UPDATE app_settings
+                    SET sonarr_interval_minutes = CASE WHEN sonarr_interval_minutes = 0 THEN 60 ELSE sonarr_interval_minutes END,
+                        radarr_interval_minutes = CASE WHEN radarr_interval_minutes = 0 THEN 60 ELSE radarr_interval_minutes END,
+                        arr_interval_defaults_applied = 1
+                    """
+                )
+            )
+
     # Timezone
     if not await _has_column(engine, table=table, column="timezone"):
         await _add_column(engine, table=table, ddl="timezone TEXT NOT NULL DEFAULT 'UTC'")

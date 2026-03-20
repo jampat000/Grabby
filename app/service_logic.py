@@ -433,7 +433,7 @@ def _detail_from_labels(labels: list[str], *, total: int) -> str:
 
 
 def _effective_app_interval_minutes(specific: object, *, global_minutes: int) -> int:
-    """Per-app scheduler tick length; 0 or invalid uses global ``interval_minutes`` (min 5)."""
+    """Per-app Arr tick length; 0 or invalid uses Grabby ``interval_minutes`` base (min 5)."""
     try:
         v = int(specific) if specific is not None else 0
     except (TypeError, ValueError):
@@ -744,7 +744,7 @@ async def run_once(session: AsyncSession) -> RunResult:
                 actions.append("Emby: skipped (outside schedule window)")
             else:
                 last_emby = getattr(settings, "emby_last_run_at", None)
-                if last_emby is not None and (now - last_emby).total_seconds() < interval_m * 60:
+                if last_emby is not None and (now - last_emby).total_seconds() < emby_interval_m * 60:
                     actions.append("Emby: skipped (run interval not elapsed)")
                 else:
                     emby = EmbyClient(EmbyConfig(settings.emby_url, settings.emby_api_key))

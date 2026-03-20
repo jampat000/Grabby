@@ -152,6 +152,7 @@ def test_post_settings_save_redirects(monkeypatch: pytest.MonkeyPatch) -> None:
         "radarr_schedule_end": "23:59",
         "sonarr_interval_minutes": "0",
         "radarr_interval_minutes": "0",
+        "interval_minutes": "60",
         "arr_search_cooldown_minutes": "1440",
         "timezone": "UTC",
     }
@@ -239,6 +240,7 @@ def test_sonarr_schedule_all_days_stays_enabled(monkeypatch: pytest.MonkeyPatch)
         "radarr_schedule_end": "23:59",
         "sonarr_interval_minutes": "0",
         "radarr_interval_minutes": "0",
+        "interval_minutes": "60",
         "arr_search_cooldown_minutes": "1440",
         "timezone": "UTC",
         "save_scope": "sonarr",

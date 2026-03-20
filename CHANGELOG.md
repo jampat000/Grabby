@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.24] - 2026-03-21
+
+### Fixed
+
+- **Sonarr/Radarr run interval:** Existing installs that still had **0** stored now get a **one-time** DB update to **60** on startup (same as new defaults). **0** (“use scheduler base”) can still be set manually in Settings.
+
+### Changed
+
+- **Scheduler vs Emby Cleaner:** **Grabby scheduler base interval** (Sonarr/Radarr wake + `0` run-interval fallback) is edited under **Grabby Settings → Global Settings**. **Emby Cleaner run interval** is its own setting under **Cleaner Settings** (`emby_interval_minutes`), migrated from the previous shared value so existing installs keep the same cadence until you change either side.
+- **Settings UI:** Run interval layout and **Global Settings** grid; **Sonarr/Radarr** defaults **60** (model + form); `placeholder="60"` on interval fields; **`arr_interval_defaults_applied`** one-time migration flag.
+
 ## [1.0.23] - 2026-03-20
 
 ### Fixed
