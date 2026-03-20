@@ -187,40 +187,48 @@
 
   </div>
 
-  <div class="card module-content">
-    <h2>Backup &amp; restore</h2>
-    <div class="hint">Export <strong>all settings</strong> (Sonarr, Radarr, Emby cleaner, schedules, API keys) into <strong>one JSON file</strong>. Use it when moving PCs or reinstalling. Treat the file like a password — anyone with it can use your keys.</div>
-    <div class="row" style="align-items:flex-end; gap:16px; flex-wrap:wrap;">
-      <div class="field">
-        <a class="btn" href="/settings/backup/export" download>Download settings backup (.json)</a>
-        <div class="small">Filename: <code>grabby-settings-backup-YYYYMMDD.json</code></div>
+  <div class="card module-content backup-restore-card">
+    <h2>Backup &amp; Restore</h2>
+    <p class="hint backup-restore-lead">Save <strong>everything in Settings</strong> to one file: <strong>Grabby</strong> (Sonarr, Radarr, schedules) and <strong>Cleaner</strong> (Emby connection, rules, schedules). Activity history is <em>not</em> included. Keep the file private — it contains API keys.</p>
+
+    <div class="backup-panels">
+      <div class="backup-panel backup-panel-download">
+        <div class="backup-panel-head">
+          <span class="backup-panel-icon" aria-hidden="true">⬇</span>
+          <h3 class="backup-panel-title">Download backup</h3>
+        </div>
+        <p class="small backup-panel-desc">Creates <code class="code-inline">grabby-settings-backup-YYYYMMDD.json</code> with your current Grabby and Cleaner settings.</p>
+        <a class="btn backup-panel-btn" href="/settings/backup/export" download>Download backup</a>
+      </div>
+
+      <div class="backup-panel backup-panel-restore">
+        <div class="backup-panel-head">
+          <span class="backup-panel-icon" aria-hidden="true">⬆</span>
+          <h3 class="backup-panel-title">Restore from backup</h3>
+        </div>
+        <p class="small backup-panel-desc">Replaces <strong>all</strong> saved Grabby and Cleaner settings on this PC. Does not change dashboard activity history.</p>
+        <form method="post" action="/settings/backup/import" enctype="multipart/form-data" class="backup-restore-form">
+          <div class="field backup-file-field">
+            <label class="backup-file-label" for="backup-file-input">Choose backup file</label>
+            <input id="backup-file-input" class="input backup-file-input" type="file" name="file" accept="application/json,.json,.JSON" required />
+          </div>
+          <div class="checkline backup-confirm-line">
+            <input type="checkbox" name="confirm" value="yes" id="backup-confirm" />
+            <label for="backup-confirm">I understand this will <strong>overwrite</strong> my current Grabby and Cleaner settings</label>
+          </div>
+          <button type="submit" class="btn secondary backup-restore-submit">Restore from backup</button>
+        </form>
       </div>
     </div>
-    <hr class="section-rule" />
-    <h3>Restore from file</h3>
-    <div class="hint">This <strong>replaces</strong> every setting in this Grabby install with the contents of the backup. Activity history in the database is not changed.</div>
-    <form method="post" action="/settings/backup/import" enctype="multipart/form-data" class="section">
-      <div class="field">
-        <label>Backup file</label>
-        <input class="input" type="file" name="file" accept="application/json,.json" required />
-      </div>
-      <div class="checkline">
-        <input type="checkbox" name="confirm" value="yes" id="backup-confirm" />
-        <label for="backup-confirm">I understand this will <strong>overwrite</strong> current settings</label>
-      </div>
-      <div class="btnbar">
-        <button type="submit" class="btn secondary">Import settings</button>
-      </div>
-    </form>
     <script>
       (function () {
-        var form = document.querySelector('form[action="/settings/backup/import"]');
+        var form = document.querySelector("form.backup-restore-form");
         if (!form) return;
         form.addEventListener("submit", function (e) {
           var ok = form.querySelector("#backup-confirm");
           if (!ok || !ok.checked) {
             e.preventDefault();
-            alert("Check the box to confirm you want to overwrite settings.");
+            alert("Check the confirmation box to restore from backup.");
           }
         });
       })();

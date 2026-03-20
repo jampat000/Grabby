@@ -22,6 +22,8 @@ def test_export_payload_structure() -> None:
     assert payload["grabby_backup"] == BACKUP_MAGIC
     assert payload["format_version"] == BACKUP_FORMAT_VERSION
     assert "exported_at" in payload
+    assert payload["includes"]["grabby"] is True
+    assert payload["includes"]["cleaner"] is True
     assert payload["settings"]["sonarr_url"] == "http://sonarr.test"
     assert payload["settings"]["sonarr_api_key"] == "secret"
 

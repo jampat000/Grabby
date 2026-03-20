@@ -46,7 +46,7 @@ This project is licensed under the **MIT License** — see [`LICENSE`](LICENSE).
 
 ## Backup & restore
 
-Export **all settings** to **one JSON file** from **Settings → Backup & restore** (move PCs, reinstall, keep API keys). Details: **[`HOWTO-RESTORE.md`](HOWTO-RESTORE.md)**.
+Export **Grabby + Cleaner settings** to **one JSON file** from **Settings → Backup & Restore** (move PCs, reinstall, keep API keys). Details: **[`HOWTO-RESTORE.md`](HOWTO-RESTORE.md)**.
 
 ## Changelog
 

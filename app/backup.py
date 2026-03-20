@@ -33,10 +33,16 @@ def app_settings_to_plain(row: AppSettings) -> dict[str, Any]:
 
 
 def build_export_payload(row: AppSettings) -> dict[str, Any]:
+    """One DB row holds Grabby (Arr) + Cleaner (Emby); all columns are exported."""
     return {
         "grabby_backup": BACKUP_MAGIC,
         "format_version": BACKUP_FORMAT_VERSION,
         "exported_at": datetime.now(timezone.utc).isoformat(),
+        "includes": {
+            "grabby": True,
+            "cleaner": True,
+            "note": "Single app_settings row: Sonarr/Radarr/schedules and Emby Cleaner rules together.",
+        },
         "settings": app_settings_to_plain(row),
     }
 

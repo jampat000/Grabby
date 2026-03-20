@@ -6,21 +6,21 @@ Grabby stores your **settings** (Sonarr, Radarr, Emby cleaner, API keys, schedul
 
 ## One-file settings backup (recommended)
 
-Use the **Web UI** so everything you need for a **reinstall or new PC** is in **one JSON file** (API keys included).
+Use the **Web UI** so **Grabby** (Sonarr/Radarr) and **Cleaner** (Emby) settings are in **one JSON file** (API keys included).
 
-1. Open Grabby in the browser (e.g. `http://127.0.0.1:8765`).
+1. Open Grabby in the browser (e.g. `http://127.0.0.1:8765` or dev `8766`).
 2. Go to **Settings**.
-3. Under **Backup & restore**, click **Download settings backup (.json)**.
+3. Under **Backup & Restore**, click **Download backup**.
 4. Keep the file **private** (same as a password manager export).
 
 ### Restore on a new install
 
 1. Install/start Grabby on the new machine.
-2. Open **Settings** → **Backup & restore**.
-3. Choose the `.json` file, check **overwrite**, click **Import settings**.
+2. Open **Settings** → **Backup & Restore** → **Restore from backup**.
+3. Choose the `.json` file, check the confirmation box, click **Restore from backup**.
 4. **Restart the Grabby Windows service** (or the app) so the scheduler reloads.
 
-**Note:** Import replaces **settings only**. **Activity / dashboard history** in the database is **not** included in the JSON backup (only configuration is).
+**Note:** Import replaces **settings only** (Grabby + Cleaner). **Activity / dashboard history** is **not** in the JSON file.
 
 ## Full database copy (optional)
 

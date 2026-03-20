@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- **Settings backup & restore:** one JSON file for all Grabby settings (export/import on **Settings**); `HOWTO-RESTORE.md` updated.
+- **Settings backup & restore:** one JSON file for all Grabby **and** Cleaner settings (same DB row); **Backup & Restore** panel with **Download backup** / **Restore from backup**; export metadata `includes` clarifies scope.
 - `/healthz` includes `version`; new `GET /api/version`.
 - Windows CI smoke test: start packaged `Grabby.exe`, probe `/healthz`.
 - Workflows: **pip-audit** (`security.yml`), **CodeQL** (`codeql.yml`); `SECURITY.md`.
