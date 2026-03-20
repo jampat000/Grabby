@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.15] - 2026-03-20
+
+### Added
+
+- **Activity detail logging:** per-run entries now include item-level context (movie titles, Sonarr episode labels, and Emby cleanup item names) instead of count-only summaries.
+
+### Changed
+
+- **Activity UI:** Dashboard and Activity pages now show detail lines under each event when available.
+- **Data model/migration:** `activity_log` gains a `detail` text column with backward-compatible migration.
+
 ## [1.0.14] - 2026-03-20
 
 ### Changed
