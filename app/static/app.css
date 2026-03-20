@@ -349,6 +349,36 @@ input.backup-file-input[type="file"]::file-selector-button:hover{
 
 .module-content{min-width:0}
 
+/* Settings: one continuous panel (Grabby Settings + Backup & Restore) */
+.settings-page-group{
+  border:1px solid var(--border);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+  backdrop-filter: blur(12px);
+  background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+  overflow:hidden;
+}
+.settings-page-group:hover{
+  border-color:rgba(96,165,250,.22);
+}
+.settings-page-group > .card{
+  border:none;
+  border-radius:0;
+  box-shadow:none;
+  background:transparent;
+  backdrop-filter:none;
+}
+.settings-page-group > .card:hover{
+  border-color:transparent;
+}
+.settings-page-group > .card:first-of-type{
+  border-bottom:1px solid var(--border);
+  padding-bottom:18px;
+}
+.settings-page-group > .card.backup-restore-card{
+  padding-top:14px;
+}
+
 .topbar{
   display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
   margin-bottom:16px;

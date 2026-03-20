@@ -12,6 +12,7 @@
     <a href="/settings" class="module-tab active">Grabby Settings</a>
   </div>
 
+  <div class="settings-page-group">
   <div class="card module-content">
     <h2>Grabby Settings</h2>
     {% set im = request.query_params.get('import', '') %}
@@ -234,6 +235,7 @@
       })();
     </script>
   </div>
+  </div>{# end settings-page-group #}
 </div>
 {% endblock %}
 
