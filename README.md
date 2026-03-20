@@ -34,7 +34,7 @@ Version is shown in the sidebar of the Web UI (`v…` next to the clock). It mat
 
 See **[`SECURITY.md`](SECURITY.md)** (reporting issues, handling API keys, official downloads).
 
-GitHub Actions runs **pip-audit** on dependencies and **CodeQL** on Python code for the default branch.
+GitHub Actions runs **pip-audit** on dependencies and **CodeQL** on Python code for the default branch. **Protect `master`** in repo settings — see **[`.github/BRANCH_PROTECTION.md`](.github/BRANCH_PROTECTION.md)**.
 
 ## What’s in this repo
 
@@ -46,6 +46,10 @@ GitHub Actions runs **pip-audit** on dependencies and **CodeQL** on Python code 
 ## License
 
 This project is licensed under the **MIT License** — see [`LICENSE`](LICENSE).
+
+## Contributing
+
+**Pull requests** into **`master`** (branch protection + CI). See **[`CONTRIBUTING.md`](CONTRIBUTING.md)**.
 
 ## Backup & Restore
 

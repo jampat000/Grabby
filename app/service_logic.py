@@ -15,6 +15,7 @@ from app.arr_client import (
     trigger_sonarr_cutoff_search,
     trigger_sonarr_missing_search,
 )
+from app.log_sanitize import redact_url_for_logging
 from app.models import ActivityLog, AppSettings, AppSnapshot, JobRunLog
 from app.schedule import in_window
 from app.time_util import utc_now_naive
@@ -333,10 +334,11 @@ async def run_once(session: AsyncSession) -> RunResult:
         except Exception:
             body = "<unavailable>"
         log.ok = False
-        log.message = f"Run failed: HTTP {e.response.status_code} for {e.request.method} {e.request.url} | {body}"
+        safe_url = redact_url_for_logging(e.request.url)
+        log.message = f"Run failed: HTTP {e.response.status_code} for {e.request.method} {safe_url} | {body}"
         log.finished_at = utc_now_naive()
         # Snapshot failure if it’s clearly Sonarr/Radarr/Emby
-        url = str(e.request.url)
+        url = safe_url
         app = "sonarr" if ":8989" in url else ("radarr" if ":7878" in url else ("emby" if (":8096" in url or ":8920" in url) else ""))
         if app:
             session.add(AppSnapshot(app=app, ok=False, status_message=log.message, missing_total=0, cutoff_unmet_total=0))
