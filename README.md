@@ -157,7 +157,7 @@ On **`v*`** tag push or **Actions → Build installer → Run workflow**, the jo
 - Open **Actions** → the run you care about → **Artifacts** → **GrabbySetup**.
 - Pushing a **tag** matching `v*` (e.g. `v1.2.3`) **prepares** a release: the build finishes and uploads the artifact, then the **release** job **pauses** until someone approves it (see below). After approval, it creates/updates the **GitHub Release** and attaches `GrabbySetup.exe` (release notes use `.github/release.yml` categories when auto-generated).
 
-### Approve before publishing a release
+### Approve before publishing a release 
 
 So you can inspect the workflow / artifact before anything goes on the **Releases** page:
 
