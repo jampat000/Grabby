@@ -100,7 +100,7 @@
               Enable Emby Cleaner schedule window
             </div>
             <label>Days</label>
-            <input type="hidden" name="emby_schedule_days" value="{{ settings.emby_schedule_days }}" data-days-input />
+            <input type="hidden" name="emby_schedule_days" value="{{ emby_schedule_days_csv }}" data-days-input />
             <div class="days-picker" data-days-picker>
               <button class="day-pill" type="button" data-day="Mon">Mon</button>
               <button class="day-pill" type="button" data-day="Tue">Tue</button>
@@ -112,14 +112,14 @@
             </div>
             <div class="row">
               <div class="field">
-                <label>Start (h:mm AM/PM)</label>
-                <input class="input" type="text" name="emby_schedule_start" value="{{ emby_schedule_start_display }}" placeholder="12:00 AM" />
-                <div class="small">Example: 8:00 AM</div>
+                <label>Start</label>
+                <input class="input" type="time" name="emby_schedule_start" value="{{ emby_schedule_start_hhmm }}" step="60" />
+                <div class="small">Local 24-hour time (HH:MM).</div>
               </div>
               <div class="field">
-                <label>End (h:mm AM/PM)</label>
-                <input class="input" type="text" name="emby_schedule_end" value="{{ emby_schedule_end_display }}" placeholder="11:59 PM" />
-                <div class="small">Example: 11:30 PM</div>
+                <label>End</label>
+                <input class="input" type="time" name="emby_schedule_end" value="{{ emby_schedule_end_hhmm }}" step="60" />
+                <div class="small">Local 24-hour time (HH:MM).</div>
               </div>
             </div>
             <div class="small">If start is later than end, the window crosses midnight.</div>

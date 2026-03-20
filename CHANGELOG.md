@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.12] - 2026-03-20
+
+### Fixed
+
+- **Schedules:** saving **schedule days** (Grabby Sonarr/Radarr + Cleaner) no longer clears selections when the posted value is empty or uses alternate day names; values are **normalized** to canonical `Mon`…`Sun` order server-side.
+
+### Changed
+
+- **Schedules:** **Start** / **End** use the browser **time picker** (`HH:MM`, 24h) for Grabby and Cleaner instead of free-text 12-hour input.
+
 ## [1.0.11] - 2026-03-20
 
 ### Fixed

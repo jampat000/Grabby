@@ -203,6 +203,37 @@ def _to_12h(hhmm: str, default: str) -> str:
         return default
 
 
+def _normalize_days_csv(raw: str, default: str = "Mon,Tue,Wed,Thu,Fri,Sat,Sun") -> str:
+    day_map = {
+        "mon": "Mon",
+        "monday": "Mon",
+        "tue": "Tue",
+        "tues": "Tue",
+        "tuesday": "Tue",
+        "wed": "Wed",
+        "wednesday": "Wed",
+        "thu": "Thu",
+        "thur": "Thu",
+        "thurs": "Thu",
+        "thursday": "Thu",
+        "fri": "Fri",
+        "friday": "Fri",
+        "sat": "Sat",
+        "saturday": "Sat",
+        "sun": "Sun",
+        "sunday": "Sun",
+    }
+    order = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    selected: set[str] = set()
+    for part in str(raw or "").split(","):
+        key = part.strip().lower()
+        canon = day_map.get(key)
+        if canon:
+            selected.add(canon)
+    out = ",".join([d for d in order if d in selected])
+    return out or default
+
+
 def _effective_emby_rules(settings: AppSettings) -> dict[str, int | bool]:
     global_rating = max(0, int(getattr(settings, "emby_rule_watched_rating_below", 0) or 0))
     global_unwatched = max(0, int(getattr(settings, "emby_rule_unwatched_days", 0) or 0))
@@ -580,10 +611,12 @@ async def settings_page(request: Request, session: AsyncSession = Depends(get_se
             "now_local": _now_local(tz),
             "timezone": tz,
             "timezones": _TIMEZONE_CHOICES,
-            "sonarr_schedule_start_display": _to_12h(settings.sonarr_schedule_start, "12:00 AM"),
-            "sonarr_schedule_end_display": _to_12h(settings.sonarr_schedule_end, "11:59 PM"),
-            "radarr_schedule_start_display": _to_12h(settings.radarr_schedule_start, "12:00 AM"),
-            "radarr_schedule_end_display": _to_12h(settings.radarr_schedule_end, "11:59 PM"),
+            "sonarr_schedule_days_csv": _normalize_days_csv(settings.sonarr_schedule_days),
+            "radarr_schedule_days_csv": _normalize_days_csv(settings.radarr_schedule_days),
+            "sonarr_schedule_start_hhmm": _normalize_hhmm(settings.sonarr_schedule_start, "00:00"),
+            "sonarr_schedule_end_hhmm": _normalize_hhmm(settings.sonarr_schedule_end, "23:59"),
+            "radarr_schedule_start_hhmm": _normalize_hhmm(settings.radarr_schedule_start, "00:00"),
+            "radarr_schedule_end_hhmm": _normalize_hhmm(settings.radarr_schedule_end, "23:59"),
         },
     )
     # Simple Browser / embedded WebViews often cache HTML; force reload of Settings.
@@ -648,8 +681,9 @@ async def emby_settings_page(request: Request, session: AsyncSession = Depends(g
             "now": utc_now_naive(),
             "now_local": _now_local(tz),
             "timezone": tz,
-            "emby_schedule_start_display": _to_12h(settings.emby_schedule_start, "12:00 AM"),
-            "emby_schedule_end_display": _to_12h(settings.emby_schedule_end, "11:59 PM"),
+            "emby_schedule_days_csv": _normalize_days_csv(settings.emby_schedule_days),
+            "emby_schedule_start_hhmm": _normalize_hhmm(settings.emby_schedule_start, "00:00"),
+            "emby_schedule_end_hhmm": _normalize_hhmm(settings.emby_schedule_end, "23:59"),
             "movie_genre_options": _MOVIE_GENRE_OPTIONS,
             "selected_movie_genres": parse_genres_csv(getattr(settings, "emby_rule_movie_genres_csv", "")),
             "selected_tv_genres": parse_genres_csv(getattr(settings, "emby_rule_tv_genres_csv", "")),
@@ -860,7 +894,7 @@ async def save_settings(
         row.sonarr_search_upgrades = data.sonarr_search_upgrades
         row.sonarr_max_items_per_run = data.sonarr_max_items_per_run
         row.sonarr_schedule_enabled = sonarr_schedule_enabled
-        row.sonarr_schedule_days = (sonarr_schedule_days or "Mon,Tue,Wed,Thu,Fri,Sat,Sun").strip()
+        row.sonarr_schedule_days = _normalize_days_csv(sonarr_schedule_days)
         row.sonarr_schedule_start = _normalize_hhmm(sonarr_schedule_start, "00:00")
         row.sonarr_schedule_end = _normalize_hhmm(sonarr_schedule_end, "23:59")
 
@@ -872,7 +906,7 @@ async def save_settings(
         row.radarr_search_upgrades = data.radarr_search_upgrades
         row.radarr_max_items_per_run = data.radarr_max_items_per_run
         row.radarr_schedule_enabled = radarr_schedule_enabled
-        row.radarr_schedule_days = (radarr_schedule_days or "Mon,Tue,Wed,Thu,Fri,Sat,Sun").strip()
+        row.radarr_schedule_days = _normalize_days_csv(radarr_schedule_days)
         row.radarr_schedule_start = _normalize_hhmm(radarr_schedule_start, "00:00")
         row.radarr_schedule_end = _normalize_hhmm(radarr_schedule_end, "23:59")
 
@@ -953,7 +987,7 @@ async def save_cleaner_settings(
     if scope in ("all", "global"):
         row.emby_dry_run = emby_dry_run
         row.emby_schedule_enabled = emby_schedule_enabled
-        row.emby_schedule_days = (emby_schedule_days or "Mon,Tue,Wed,Thu,Fri,Sat,Sun").strip()
+        row.emby_schedule_days = _normalize_days_csv(emby_schedule_days)
         row.emby_schedule_start = _normalize_hhmm(emby_schedule_start, "00:00")
         row.emby_schedule_end = _normalize_hhmm(emby_schedule_end, "23:59")
         _scan = int(emby_max_items_scan)
