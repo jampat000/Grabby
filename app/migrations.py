@@ -122,7 +122,7 @@ async def migrate(engine: AsyncEngine) -> None:
     # Older schemas used VARCHAR(16), which can be too short for full week CSV on strict DBs.
     await _widen_schedule_days_columns(engine)
 
-    # Snapshots table (create if missing)
+    # Snapshots / activity tables (create if missing)
     async with engine.begin() as conn:
         await conn.execute(
             text(
@@ -148,9 +148,14 @@ async def migrate(engine: AsyncEngine) -> None:
                   created_at DATETIME NOT NULL,
                   app TEXT NOT NULL,
                   kind TEXT NOT NULL,
-                  count INTEGER NOT NULL DEFAULT 0
+                  count INTEGER NOT NULL DEFAULT 0,
+                  detail TEXT NOT NULL DEFAULT ''
                 )
                 """
             )
         )
+
+    # Detailed activity log text for existing DBs.
+    if not await _has_column(engine, table="activity_log", column="detail"):
+        await _add_column(engine, table="activity_log", ddl="detail TEXT NOT NULL DEFAULT ''")
 

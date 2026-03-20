@@ -201,6 +201,42 @@ def _episode_ids_for_emby_tv_item(emby_item: dict, sonarr_episodes: list[dict]) 
     return []
 
 
+def _sonarr_episode_label(rec: dict) -> str:
+    title = str(rec.get("seriesTitle") or rec.get("title") or "").strip()
+    season = _safe_int(rec.get("seasonNumber")) or 0
+    ep_no = _safe_int(rec.get("episodeNumber")) or _safe_int(rec.get("episodeNumberStart")) or 0
+    ep_end = _safe_int(rec.get("episodeNumberEnd")) or ep_no
+    code = f"S{season:02d}E{ep_no:02d}" if season > 0 and ep_no > 0 else "Episode"
+    if ep_end and ep_end != ep_no:
+        code = f"{code}-E{ep_end:02d}"
+    episode_title = str(rec.get("title") or "").strip()
+    if title and episode_title:
+        return f"{title} {code} - {episode_title}"
+    if title:
+        return f"{title} {code}"
+    return episode_title or code
+
+
+def _radarr_movie_label(rec: dict) -> str:
+    title = str(rec.get("title") or "").strip() or "Movie"
+    year = _safe_int(rec.get("year"))
+    if year:
+        return f"{title} ({year})"
+    return title
+
+
+def _detail_from_labels(labels: list[str], *, total: int) -> str:
+    uniq = [x for x in labels if x]
+    if not uniq:
+        return ""
+    max_items = 8
+    shown = uniq[:max_items]
+    remain = max(0, total - len(shown))
+    if remain > 0:
+        return ", ".join(shown) + f", +{remain} more"
+    return ", ".join(shown)
+
+
 async def run_once(session: AsyncSession) -> RunResult:
     log = JobRunLog(started_at=utc_now_naive(), ok=False, message="")
     session.add(log)
@@ -239,8 +275,9 @@ async def run_once(session: AsyncSession) -> RunResult:
 
                     if sonarr_missing_enabled:
                         missing = await sonarr.wanted_missing(page=1, page_size=min(100, sonarr_limit))
+                        missing_records = missing.get("records", []) or []
                         missing_total = int(missing.get("totalRecords") or 0)
-                        ids = _take_int_ids(missing.get("records", []) or [], "episodeId", "id", limit=sonarr_limit)
+                        ids = _take_int_ids(missing_records, "episodeId", "id", limit=sonarr_limit)
                         if ids:
                             try:
                                 tag_id = await sonarr.ensure_tag("grabby-missing")
@@ -257,14 +294,24 @@ async def run_once(session: AsyncSession) -> RunResult:
                                 )
                             await trigger_sonarr_missing_search(sonarr, episode_ids=ids)
                             actions.append(f"Sonarr: missing search for {len(ids)} episode(s)")
-                            session.add(ActivityLog(job_run_id=log.id, app="sonarr", kind="missing", count=len(ids)))
+                            labels = [_sonarr_episode_label(r) for r in missing_records[: len(ids)]]
+                            session.add(
+                                ActivityLog(
+                                    job_run_id=log.id,
+                                    app="sonarr",
+                                    kind="missing",
+                                    count=len(ids),
+                                    detail=_detail_from_labels(labels, total=len(ids)),
+                                )
+                            )
                         else:
                             actions.append("Sonarr: no missing episodes found")
 
                     if sonarr_upgrades_enabled:
                         cutoff = await sonarr.wanted_cutoff_unmet(page=1, page_size=min(100, sonarr_limit))
+                        cutoff_records = cutoff.get("records", []) or []
                         cutoff_total = int(cutoff.get("totalRecords") or 0)
-                        ids = _take_int_ids(cutoff.get("records", []) or [], "episodeId", "id", limit=sonarr_limit)
+                        ids = _take_int_ids(cutoff_records, "episodeId", "id", limit=sonarr_limit)
                         if ids:
                             try:
                                 tag_id = await sonarr.ensure_tag("grabby-upgrade")
@@ -281,7 +328,16 @@ async def run_once(session: AsyncSession) -> RunResult:
                                 )
                             await trigger_sonarr_cutoff_search(sonarr, episode_ids=ids)
                             actions.append(f"Sonarr: cutoff-unmet search for {len(ids)} episode(s)")
-                            session.add(ActivityLog(job_run_id=log.id, app="sonarr", kind="upgrade", count=len(ids)))
+                            labels = [_sonarr_episode_label(r) for r in cutoff_records[: len(ids)]]
+                            session.add(
+                                ActivityLog(
+                                    job_run_id=log.id,
+                                    app="sonarr",
+                                    kind="upgrade",
+                                    count=len(ids),
+                                    detail=_detail_from_labels(labels, total=len(ids)),
+                                )
+                            )
                         else:
                             actions.append("Sonarr: no cutoff-unmet episodes found")
 
@@ -321,8 +377,9 @@ async def run_once(session: AsyncSession) -> RunResult:
 
                     if radarr_missing_enabled:
                         missing = await radarr.wanted_missing(page=1, page_size=min(100, radarr_limit))
+                        missing_records = missing.get("records", []) or []
                         missing_total = int(missing.get("totalRecords") or 0)
-                        ids = _take_int_ids(missing.get("records", []) or [], "movieId", "id", limit=radarr_limit)
+                        ids = _take_int_ids(missing_records, "movieId", "id", limit=radarr_limit)
                         if ids:
                             try:
                                 tag_id = await radarr.ensure_tag("grabby-missing")
@@ -333,14 +390,24 @@ async def run_once(session: AsyncSession) -> RunResult:
                                 )
                             await trigger_radarr_missing_search(radarr, movie_ids=ids)
                             actions.append(f"Radarr: missing search for {len(ids)} movie(s)")
-                            session.add(ActivityLog(job_run_id=log.id, app="radarr", kind="missing", count=len(ids)))
+                            labels = [_radarr_movie_label(r) for r in missing_records[: len(ids)]]
+                            session.add(
+                                ActivityLog(
+                                    job_run_id=log.id,
+                                    app="radarr",
+                                    kind="missing",
+                                    count=len(ids),
+                                    detail=_detail_from_labels(labels, total=len(ids)),
+                                )
+                            )
                         else:
                             actions.append("Radarr: no missing movies found")
 
                     if radarr_upgrades_enabled:
                         cutoff = await radarr.wanted_cutoff_unmet(page=1, page_size=min(100, radarr_limit))
+                        cutoff_records = cutoff.get("records", []) or []
                         cutoff_total = int(cutoff.get("totalRecords") or 0)
-                        ids = _take_int_ids(cutoff.get("records", []) or [], "movieId", "id", limit=radarr_limit)
+                        ids = _take_int_ids(cutoff_records, "movieId", "id", limit=radarr_limit)
                         if ids:
                             try:
                                 tag_id = await radarr.ensure_tag("grabby-upgrade")
@@ -351,7 +418,16 @@ async def run_once(session: AsyncSession) -> RunResult:
                                 )
                             await trigger_radarr_cutoff_search(radarr, movie_ids=ids)
                             actions.append(f"Radarr: cutoff-unmet search for {len(ids)} movie(s)")
-                            session.add(ActivityLog(job_run_id=log.id, app="radarr", kind="upgrade", count=len(ids)))
+                            labels = [_radarr_movie_label(r) for r in cutoff_records[: len(ids)]]
+                            session.add(
+                                ActivityLog(
+                                    job_run_id=log.id,
+                                    app="radarr",
+                                    kind="upgrade",
+                                    count=len(ids),
+                                    detail=_detail_from_labels(labels, total=len(ids)),
+                                )
+                            )
                         else:
                             actions.append("Radarr: no cutoff-unmet movies found")
 
@@ -520,6 +596,7 @@ async def run_once(session: AsyncSession) -> RunResult:
                                 app="emby",
                                 kind="cleanup",
                                 count=len(candidates),
+                                detail=_detail_from_labels([name for _, name, _, _ in candidates], total=len(candidates)),
                             )
                         )
                 finally:

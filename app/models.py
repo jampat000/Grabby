@@ -112,5 +112,6 @@ class ActivityLog(Base):
     app: Mapped[str] = mapped_column(String(16))   # "sonarr" | "radarr"
     kind: Mapped[str] = mapped_column(String(16))  # "missing" | "upgrade"
     count: Mapped[int] = mapped_column(Integer, default=0)
+    detail: Mapped[str] = mapped_column(Text, default="")
 
 

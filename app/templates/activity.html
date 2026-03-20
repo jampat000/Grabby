@@ -35,6 +35,10 @@
             {% else %}
               {{ e.count }} {{ "episode" if e.app == "sonarr" else "movie" }}{{ "s" if e.count != 1 else "" }} upgrade search
             {% endif %}
+            {% if e.detail %}
+              <br />
+              <span class="small muted">{{ e.detail }}</span>
+            {% endif %}
           </span>
         </div>
         {% endfor %}

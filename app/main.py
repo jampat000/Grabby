@@ -418,7 +418,13 @@ async def dashboard(request: Request, session: AsyncSession = Depends(get_sessio
     )
     tz = getattr(settings, "timezone", None) or "UTC"
     activity_display = [
-        {"time_local": _fmt_local(e.created_at, tz), "app": e.app, "kind": e.kind, "count": e.count}
+        {
+            "time_local": _fmt_local(e.created_at, tz),
+            "app": e.app,
+            "kind": e.kind,
+            "count": e.count,
+            "detail": (getattr(e, "detail", "") or "").strip(),
+        }
         for e in activity
     ]
     sonarr_snap = (
@@ -532,7 +538,13 @@ async def activity_page(request: Request, session: AsyncSession = Depends(get_se
     )
     tz = getattr(settings, "timezone", None) or "UTC"
     activity_display = [
-        {"time_local": _fmt_local(e.created_at, tz), "app": e.app, "kind": e.kind, "count": e.count}
+        {
+            "time_local": _fmt_local(e.created_at, tz),
+            "app": e.app,
+            "kind": e.kind,
+            "count": e.count,
+            "detail": (getattr(e, "detail", "") or "").strip(),
+        }
         for e in activity
     ]
     return templates.TemplateResponse(
