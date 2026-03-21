@@ -51,7 +51,7 @@ def test_apply_eligible_allows_dev_override(monkeypatch: pytest.MonkeyPatch) -> 
 
 
 def test_api_updates_check_fresh_release(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def _fake_fetch(_repo: str) -> dict[str, Any]:
+    async def _fake_fetch(_repo: str, include_token: bool = True) -> dict[str, Any]:
         return {
             "tag_name": "v2.0.0",
             "html_url": "https://github.com/jampat000/Grabby/releases/tag/v2.0.0",
@@ -82,7 +82,7 @@ def test_api_updates_check_falls_back_when_api_rate_limited(monkeypatch: pytest.
     resp = httpx.Response(403, json={"message": "API rate limit exceeded for 1.2.3.4."})
     err = httpx.HTTPStatusError("rate limited", request=req, response=resp)
 
-    async def _api_fail(_repo: str) -> dict[str, Any]:
+    async def _api_fail(_repo: str, include_token: bool = True) -> dict[str, Any]:
         raise err
 
     async def _web_ok(_repo: str) -> dict[str, Any]:
@@ -111,8 +111,47 @@ def test_api_updates_check_falls_back_when_api_rate_limited(monkeypatch: pytest.
     assert data["latest_version"] == "2.0.0"
 
 
+def test_api_updates_check_retries_api_without_token_on_401(monkeypatch: pytest.MonkeyPatch) -> None:
+    req = httpx.Request("GET", "https://api.github.com/repos/x/y/releases/latest")
+    resp401 = httpx.Response(401, request=req, json={"message": "Bad credentials"})
+    err401 = httpx.HTTPStatusError("401", request=req, response=resp401)
+
+    async def _fetch(_repo: str, include_token: bool = True) -> dict[str, Any]:
+        if include_token:
+            raise err401
+        return {
+            "tag_name": "v2.0.0",
+            "html_url": "https://github.com/jampat000/Grabby/releases/tag/v2.0.0",
+            "assets": [
+                {
+                    "name": "GrabbySetup.exe",
+                    "browser_download_url": "https://github.com/jampat000/Grabby/releases/download/v2.0.0/GrabbySetup.exe",
+                }
+            ],
+        }
+
+    monkeypatch.setattr("app.updates._fetch_latest_release_payload", _fetch)
+    monkeypatch.setattr("app.updates._platform_ok", lambda: True)
+    monkeypatch.setattr("app.updates.get_app_version", lambda: "1.0.0")
+
+    with _build_client(monkeypatch) as client:
+        r = client.get("/api/updates/check")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["ok"] is True
+    assert data["update_available"] is True
+
+
+def test_installer_download_headers_skip_auth_for_github_releases_download() -> None:
+    h = updates_mod._installer_download_headers(
+        "https://github.com/jampat000/Grabby/releases/download/v1.0.27/GrabbySetup.exe"
+    )
+    assert "Authorization" not in h
+    assert h.get("Accept") == "application/octet-stream"
+
+
 def test_api_updates_check_up_to_date(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def _fake_fetch(_repo: str) -> dict[str, Any]:
+    async def _fake_fetch(_repo: str, include_token: bool = True) -> dict[str, Any]:
         return {
             "tag_name": "v1.0.0",
             "html_url": "https://github.com/x/y",

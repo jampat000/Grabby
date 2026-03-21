@@ -29,12 +29,16 @@ SETUP_ASSET_NAME = "GrabbySetup.exe"
 GITHUB_API_VERSION = "2022-11-28"
 
 
-def _github_headers(*, accept: str | None = None) -> dict[str, str]:
-    """Headers for GitHub API and release-asset downloads.
+def _github_headers(*, accept: str | None = None, include_token: bool = True) -> dict[str, str]:
+    """Headers for GitHub API and (some) release-asset downloads.
 
     GitHub rejects many requests without a descriptive User-Agent (403). Optional
     ``GRABBY_GITHUB_TOKEN`` or ``GITHUB_TOKEN`` raises rate limits and allows
     private-repo release checks.
+
+    A **bad or expired** token in the environment yields **401** on the API and can
+    break **anonymous** ``/releases/download/...`` fetches if ``Authorization`` is sent,
+    so callers can set ``include_token=False``.
     """
     repo = _releases_repo()
     contact = f"https://github.com/{repo}"
@@ -44,9 +48,10 @@ def _github_headers(*, accept: str | None = None) -> dict[str, str]:
         "X-GitHub-Api-Version": GITHUB_API_VERSION,
         "Accept": accept or "application/vnd.github+json",
     }
-    token = (os.environ.get("GRABBY_GITHUB_TOKEN") or os.environ.get("GITHUB_TOKEN") or "").strip()
-    if token:
-        h["Authorization"] = f"Bearer {token}"
+    if include_token:
+        token = (os.environ.get("GRABBY_GITHUB_TOKEN") or os.environ.get("GITHUB_TOKEN") or "").strip()
+        if token:
+            h["Authorization"] = f"Bearer {token}"
     return h
 
 
@@ -192,11 +197,11 @@ async def _fetch_latest_without_api(repo: str) -> dict[str, Any] | None:
     return await _fetch_latest_via_releases_atom(repo)
 
 
-async def _fetch_latest_release_payload(repo: str) -> dict[str, Any]:
+async def _fetch_latest_release_payload(repo: str, *, include_token: bool = True) -> dict[str, Any]:
     url = _latest_api_url(repo)
     timeout = httpx.Timeout(30.0, connect=10.0)
     async with httpx.AsyncClient(
-        headers=_github_headers(),
+        headers=_github_headers(include_token=include_token),
         timeout=timeout,
         follow_redirects=True,
     ) as client:
@@ -206,7 +211,7 @@ async def _fetch_latest_release_payload(repo: str) -> dict[str, Any]:
 
 
 async def _resolve_latest_release_payload(repo: str) -> dict[str, Any]:
-    """GitHub REST API first; on rate-limit 403/429 fall back to github.com (separate limits)."""
+    """GitHub REST API first; 401 (bad PAT) → retry without token; 403/429 → web/Atom fallback."""
     now = time.monotonic()
     with _release_cache_lock:
         hit = _release_payload_cache.get(repo)
@@ -214,10 +219,19 @@ async def _resolve_latest_release_payload(repo: str) -> dict[str, Any]:
             return hit[1].copy()
 
     try:
-        payload = await _fetch_latest_release_payload(repo)
+        payload = await _fetch_latest_release_payload(repo, include_token=True)
     except httpx.HTTPStatusError as e:
-        # REST API: 60 req/hr per IP when unauthenticated. github.com / Atom use separate limits.
-        if e.response.status_code in (403, 429):
+        code = e.response.status_code
+        # Bad GITHUB_TOKEN / GRABBY_GITHUB_TOKEN in env: retry API anonymously for public repos.
+        if code == 401:
+            try:
+                payload = await _fetch_latest_release_payload(repo, include_token=False)
+            except httpx.HTTPStatusError:
+                fb = await _fetch_latest_without_api(repo)
+                if fb is None:
+                    raise
+                payload = fb
+        elif code in (403, 429):
             fb = await _fetch_latest_without_api(repo)
             if fb is not None:
                 payload = fb
@@ -229,6 +243,19 @@ async def _resolve_latest_release_payload(repo: str) -> dict[str, Any]:
     with _release_cache_lock:
         _release_payload_cache[repo] = (now + _RELEASE_CACHE_TTL_SEC, payload.copy())
     return payload.copy()
+
+
+def _installer_download_headers(url: str) -> dict[str, str]:
+    """Headers for downloading GrabbySetup.exe.
+
+    ``https://github.com/.../releases/download/...`` must not send a bad ``Authorization``
+    header (common when ``GITHUB_TOKEN`` is set globally for other tools).
+    API-hosted release assets still use API headers (optional token).
+    """
+    base = url.split("?", 1)[0].lower()
+    if "api.github.com" in base:
+        return _github_headers(accept="application/octet-stream", include_token=True)
+    return {**_web_headers(), "Accept": "application/octet-stream"}
 
 
 def _pick_setup_asset(payload: dict[str, Any]) -> dict[str, Any] | None:
@@ -266,7 +293,7 @@ def _launch_installer_detached(exe_path: Path) -> None:
 async def _download_installer(url: str, dest: Path) -> None:
     timeout = httpx.Timeout(600.0, connect=30.0)
     async with httpx.AsyncClient(
-        headers=_github_headers(accept="application/octet-stream"),
+        headers=_installer_download_headers(url),
         timeout=timeout,
         follow_redirects=True,
     ) as client:
@@ -319,6 +346,12 @@ async def _compute_updates_check_payload() -> dict[str, Any]:
                 "GitHub denied access (403). This is often rate limiting or a missing/invalid token. "
                 "Wait a few minutes and retry. If it persists, set GRABBY_GITHUB_TOKEN to a read-only "
                 f"personal access token (see GitHub docs).{suffix}"
+            )
+        elif code == 401:
+            err = (
+                "GitHub returned 401 (unauthorized). If GITHUB_TOKEN or GRABBY_GITHUB_TOKEN is set on "
+                "this machine, it may be expired or wrong — remove it or fix it, then retry."
+                f"{suffix}"
             )
         else:
             err = f"GitHub returned an error ({code}).{suffix}"
