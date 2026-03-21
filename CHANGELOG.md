@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.28] - 2026-03-22
+
+### Fixed
+
+- **Web UI:** Cache-bust **`/static/app.css`** with **`?v=<app_version>`** (same as **`app.js`**) so browser upgrades don’t keep an old stylesheet after installing a new build — fixes oversized or “wrong” dashboard typography vs dev.
+- **In-app upgrade / update check:** If **`GITHUB_TOKEN`** or **`GRABBY_GITHUB_TOKEN`** is set to an **invalid** value (common on dev/media PCs), the GitHub API returned **401** with **no** fallback. Grabby now **retries the API without** that header, then falls back to **web/Atom** like rate limits. **Installer downloads** from **`github.com/.../releases/download/...`** no longer send **`Authorization`**, so a bad global token won’t break **`GrabbySetup.exe`** downloads.
+
 ## [1.0.27] - 2026-03-20
 
 ### Changed
@@ -257,7 +264,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 5. If a **tag** exists but **Releases → Latest** never updated (no **`GrabbySetup.exe`** for that tag), check that **`vX.Y.Z`** points to the **`master`** commit you mean (run **`git fetch origin master --tags`**, then compare **`git rev-parse vX.Y.Z`** vs **`git rev-parse origin/master`**). **Manual** **Build installer** / **`gh workflow run … --ref vX.Y.Z`** uses the **workflow YAML from that tag’s commit**, not automatically from **`master`** — an **old** tag SHA can **build** but **skip** **release**. **Fix:** move the tag to the correct **`master`** commit and **re-push** the tag, **or** bump **`VERSION`** and release again, **or** **`gh release create`** + attach **`GrabbySetup.exe`** from a green run artifact.
 6. Follow **GitHub Actions** / environment rules for approving production releases if configured.
 
-[Unreleased]: https://github.com/jampat000/Grabby/compare/v1.0.27...HEAD
+[Unreleased]: https://github.com/jampat000/Grabby/compare/v1.0.28...HEAD
+[1.0.28]: https://github.com/jampat000/Grabby/compare/v1.0.27...v1.0.28
 [1.0.27]: https://github.com/jampat000/Grabby/compare/v1.0.26...v1.0.27
 [1.0.26]: https://github.com/jampat000/Grabby/compare/v1.0.25...v1.0.26
 [1.0.25]: https://github.com/jampat000/Grabby/compare/v1.0.24...v1.0.25
